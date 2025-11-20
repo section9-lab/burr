@@ -119,7 +119,15 @@ class LifecycleAdapterSet:
         :param adapters: Adapters to group together
         """
         self._adapters = list(adapters)
-        self.sync_hooks, self.async_hooks = self._get_lifecycle_hooks()
+        self._sync_hooks, self._async_hooks = self._get_lifecycle_hooks()
+
+    @property
+    def sync_hooks(self):
+        return self._sync_hooks
+
+    @property
+    def async_hooks(self):
+        return self._async_hooks
 
     def with_new_adapters(self, *adapters: "LifecycleAdapter") -> "LifecycleAdapterSet":
         """Adds new adapters to the set.
@@ -212,3 +220,69 @@ class LifecycleAdapterSet:
         :return: A list of adapters
         """
         return self._adapters
+
+    def get_first_matching_hook(
+        self, hook_name: str, predicate: Callable[["LifecycleAdapter"], bool]
+    ):
+        """Get first hook of given type that matches predicate.
+
+        For interceptor hooks (intercept_action_execution, intercept_streaming_action),
+        this searches all adapters for instances of the interceptor classes, since
+        interceptors don't use the standard hook registration system.
+
+        :param hook_name: Name of the hook to search for (or interceptor type)
+        :param predicate: Function that takes a hook and returns True if it matches
+        :return: The first matching hook, or None if no match found
+        """
+        # Special handling for interceptors - they don't use the registration system
+        if hook_name in ("intercept_action_execution", "intercept_streaming_action"):
+            # Import here to avoid circular dependency
+            from burr.lifecycle.base import (
+                ActionExecutionInterceptorHook,
+                ActionExecutionInterceptorHookAsync,
+                StreamingActionInterceptorHook,
+                StreamingActionInterceptorHookAsync,
+            )
+
+            interceptor_classes = (
+                ActionExecutionInterceptorHook,
+                ActionExecutionInterceptorHookAsync,
+                StreamingActionInterceptorHook,
+                StreamingActionInterceptorHookAsync,
+            )
+
+            for adapter in self.adapters:
+                if isinstance(adapter, interceptor_classes):
+                    if predicate(adapter):
+                        return adapter
+            return None
+
+        # Standard hook lookup for registered hooks
+        hooks = self.sync_hooks.get(hook_name, []) + self.async_hooks.get(hook_name, [])
+        for hook in hooks:
+            if predicate(hook):
+                return hook
+        return None
+
+    def get_worker_adapter_set(self) -> "LifecycleAdapterSet":
+        """Create a new LifecycleAdapterSet containing only worker hooks.
+        Worker hooks are those with names ending in '_worker' and are designed
+        to be called on remote execution environments (Ray/Temporal workers).
+
+        :return: A new LifecycleAdapterSet with only worker hooks
+        """
+        worker_hooks = []
+        for adapter in self.adapters:
+            # Check if this adapter is a worker hook by looking at its registered hooks
+            is_worker = False
+            for cls in inspect.getmro(adapter.__class__):
+                sync_hook = getattr(cls, SYNC_HOOK, None)
+                async_hook = getattr(cls, ASYNC_HOOK, None)
+                if (sync_hook and sync_hook.endswith("_worker")) or (
+                    async_hook and async_hook.endswith("_worker")
+                ):
+                    is_worker = True
+                    break
+            if is_worker:
+                worker_hooks.append(adapter)
+        return LifecycleAdapterSet(*worker_hooks)
