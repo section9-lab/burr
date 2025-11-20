@@ -107,9 +107,62 @@ def remote_task(state: State):
 pip install -r requirements.txt
 ```
 
-## Running the Example
+## Examples
 
-### Python Script
+This directory contains several examples demonstrating different patterns:
+
+### 1. Basic Function-Based Execution (`application.py`)
+
+Simple example showing how to selectively run actions on Ray workers.
+
+```bash
+python application.py
+```
+
+### 2. Actor-Based Multiplexing (`actor_based_execution.py`)
+
+Advanced example showing multiple Burr applications sharing a pool of Ray Actors. Actors hold expensive resources (ML models, connections) and multiplex between requests.
+
+```bash
+python actor_based_execution.py
+```
+
+Key features:
+- ✅ **Resource reuse**: Expensive resources loaded once per actor
+- ✅ **Multiplexing**: 10 applications sharing 2 actors
+- ✅ **State isolation**: Each application maintains independent state
+- ✅ **Load balancing**: Requests distributed across actor pool
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) and [MULTIPLEXING_EXPLAINED.md](MULTIPLEXING_EXPLAINED.md) for detailed explanations.
+
+### 3. Async FastAPI Example (`async_fastapi_example.py`)
+
+Production-ready example showing async FastAPI endpoints with non-blocking Ray actor execution.
+
+```bash
+# Terminal 1: Start server
+python async_fastapi_example.py
+
+# Terminal 2: Test concurrent requests
+python async_fastapi_example.py test
+```
+
+Key features:
+- ✅ **Non-blocking async**: No blocking on Ray calls
+- ✅ **Concurrent requests**: Multiple FastAPI requests share actor pool
+- ✅ **Production-ready**: Proper async/await patterns
+
+### 4. Async Standalone Test (`async_standalone_test.py`)
+
+Simpler async example without FastAPI dependency.
+
+```bash
+python async_standalone_test.py
+```
+
+## Running the Examples
+
+### Basic Function-Based Example
 
 ```bash
 python application.py
@@ -201,6 +254,40 @@ class CustomBackendInterceptor(ActionExecutionInterceptorHook):
 2. **Worker Hooks**: Must be picklable (avoid closures with local variables)
 3. **Error Handling**: Exceptions on workers propagate back to orchestrator
 4. **Performance**: Ray overhead ~100ms per task; use for tasks >1s
+5. **Async Interceptors**: For async FastAPI/web apps, use `ActionExecutionInterceptorHookAsync` with `async def intercept_run()`. The framework automatically detects and awaits async interceptors even when actions are synchronous.
+
+## Async Interceptors
+
+For non-blocking execution in async applications (FastAPI, async web servers):
+
+```python
+from burr.lifecycle import ActionExecutionInterceptorHookAsync
+
+class AsyncActorInterceptor(ActionExecutionInterceptorHookAsync):
+    """Async interceptor for non-blocking Ray calls"""
+
+    def should_intercept(self, *, action: Action, **kwargs) -> bool:
+        return "actor" in action.tags
+
+    async def intercept_run(
+        self, *, action: Action, state: State, inputs: Dict[str, Any], **kwargs
+    ) -> dict:
+        # Get actor from pool (async, thread-safe)
+        actor = await self.actor_pool.get_actor(action.name)
+
+        # Execute on actor (non-blocking)
+        result_ref = actor.execute_action.remote(action, state, inputs)
+        result = await asyncio.to_thread(ray.get, result_ref)
+
+        return result
+```
+
+Key points:
+- Use `ActionExecutionInterceptorHookAsync` base class
+- Make `intercept_run()` an async method
+- Use `await asyncio.to_thread(ray.get, ...)` to avoid blocking event loop
+- Works seamlessly with `await app.astep()` in async contexts
+- The framework automatically detects async interceptors and uses async execution path
 
 ## Related Documentation
 

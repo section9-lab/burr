@@ -1175,7 +1175,19 @@ class Application(Generic[ApplicationStateType]):
             result = None
             new_state = self._state
             try:
-                if not next_action.is_async():
+                # Check if there's an async interceptor for this action
+                has_async_interceptor = False
+                if self._adapter_set:
+                    interceptor = self._adapter_set.get_first_matching_hook(
+                        "intercept_action_execution",
+                        lambda hook: hook.should_intercept(action=next_action)
+                        and hasattr(hook, "intercept_run"),
+                    )
+                    if interceptor and inspect.iscoroutinefunction(interceptor.intercept_run):
+                        has_async_interceptor = True
+
+                # Only delegate to sync version if action is sync AND no async interceptor
+                if not next_action.is_async() and not has_async_interceptor:
                     # we can just delegate to the synchronous version, it will block the event loop,
                     # but that's safer than assuming its OK to launch a thread
                     # TODO -- add an option/configuration to launch a thread (yikes, not super safe, but for a pure function

@@ -7,6 +7,7 @@ from burr.core import Action, ApplicationBuilder, State, action
 from burr.core.action import streaming_action
 from burr.lifecycle import (
     ActionExecutionInterceptorHook,
+    ActionExecutionInterceptorHookAsync,
     PostRunStepHookWorker,
     PreRunStepHookWorker,
     StreamingActionInterceptorHook,
@@ -36,6 +37,16 @@ def streaming_responder(state: State) -> Generator[Tuple[dict, Optional[State]],
         yield {"response": token}, None
     full_response = "".join(buffer)
     yield {"response": full_response}, state.update(response=full_response)
+
+
+@action(reads=["x"], writes=["w"], tags=["intercepted"])
+async def async_multiply(state: State) -> Tuple[dict, State]:
+    """Async action for testing"""
+    import asyncio
+
+    await asyncio.sleep(0.01)  # Simulate async work
+    result = {"w": state["x"] * 3}
+    return result, state.update(**result)
 
 
 # Mock interceptor that captures execution
@@ -337,6 +348,121 @@ def test_multiple_interceptors_first_wins():
 
     # Second interceptor should NOT have been called
     assert not second.called
+
+
+@pytest.mark.asyncio
+async def test_async_interceptor_with_sync_action():
+    """Test that async interceptors work with sync actions"""
+    import asyncio
+
+    class AsyncMockInterceptor(ActionExecutionInterceptorHookAsync):
+        """Async interceptor that simulates async execution (e.g., Ray with asyncio)"""
+
+        def __init__(self):
+            self.intercepted_actions = []
+            self.async_calls_made = 0
+
+        def should_intercept(self, *, action: Action, **kwargs) -> bool:
+            return "intercepted" in action.tags
+
+        async def intercept_run(
+            self, *, action: Action, state: State, inputs: Dict[str, Any], **kwargs
+        ) -> dict:
+            self.intercepted_actions.append(action.name)
+
+            # Simulate async operation (e.g., waiting for Ray actor)
+            await asyncio.sleep(0.01)
+            self.async_calls_made += 1
+
+            # Execute action (sync action, but in async context)
+            if hasattr(action, "single_step") and action.single_step:
+                result, new_state = action.run_and_update(state, **inputs)
+                result_with_state = result.copy()
+                result_with_state["__INTERCEPTOR_NEW_STATE__"] = new_state
+                result = result_with_state
+            else:
+                state_to_use = state.subset(*action.reads)
+                result = action.run(state_to_use, **inputs)
+
+            return result
+
+    interceptor = AsyncMockInterceptor()
+
+    app = (
+        ApplicationBuilder()
+        .with_state(x=5)
+        .with_actions(add_one, multiply_by_two)
+        .with_transitions(
+            ("add_one", "multiply_by_two"),
+            ("multiply_by_two", "add_one"),
+        )
+        .with_entrypoint("add_one")
+        .with_hooks(interceptor)
+        .build()
+    )
+
+    # Run add_one (not intercepted) - should work with astep
+    action, result, state = await app.astep()
+    assert action.name == "add_one"
+    assert state["y"] == 6
+    assert "add_one" not in interceptor.intercepted_actions
+    assert interceptor.async_calls_made == 0
+
+    # Run multiply_by_two (intercepted) - async interceptor should be called
+    action, result, state = await app.astep()
+    assert action.name == "multiply_by_two"
+    assert state["z"] == 10  # 5 * 2
+    assert "multiply_by_two" in interceptor.intercepted_actions
+    assert interceptor.async_calls_made == 1
+
+
+@pytest.mark.asyncio
+async def test_async_interceptor_with_async_action():
+    """Test that async interceptors work with async actions"""
+    import asyncio
+
+    class AsyncMockInterceptor(ActionExecutionInterceptorHookAsync):
+        def __init__(self):
+            self.intercepted_actions = []
+
+        def should_intercept(self, *, action: Action, **kwargs) -> bool:
+            return "intercepted" in action.tags
+
+        async def intercept_run(
+            self, *, action: Action, state: State, inputs: Dict[str, Any], **kwargs
+        ) -> dict:
+            self.intercepted_actions.append(action.name)
+
+            # Simulate async execution
+            await asyncio.sleep(0.01)
+
+            # Execute async action
+            if hasattr(action, "single_step") and action.single_step:
+                result, new_state = await action.run_and_update(state, **inputs)
+                result_with_state = result.copy()
+                result_with_state["__INTERCEPTOR_NEW_STATE__"] = new_state
+                return result_with_state
+            else:
+                state_to_use = state.subset(*action.reads)
+                result = await action.run(state_to_use, **inputs)
+                return result
+
+    interceptor = AsyncMockInterceptor()
+
+    app = (
+        ApplicationBuilder()
+        .with_state(x=7)
+        .with_actions(async_multiply)
+        .with_entrypoint("async_multiply")
+        .with_hooks(interceptor)
+        .build()
+    )
+
+    # Run async action with async interceptor
+    action, result, state = await app.astep()
+    assert action.name == "async_multiply"
+    assert state["w"] == 21  # 7 * 3
+    assert "async_multiply" in interceptor.intercepted_actions
 
 
 if __name__ == "__main__":

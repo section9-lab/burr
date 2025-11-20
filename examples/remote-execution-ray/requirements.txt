@@ -1,2 +1,5 @@
 burr
+fastapi>=0.100.0
+httpx>=0.24.0
 ray>=2.0.0
+uvicorn[standard]>=0.23.0
