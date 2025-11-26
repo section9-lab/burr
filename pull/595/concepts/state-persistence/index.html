@@ -404,8 +404,8 @@ and you want to store the state of the process after each action, and then reloa
 </ol>
 <p>In the case of a chatbot, the <code class="docutils literal notranslate"><span class="pre">app_id</span></code> could be a uuid, and the <code class="docutils literal notranslate"><span class="pre">partition_key</span></code> could be the user’s ID or email, etc.
 Note that <code class="docutils literal notranslate"><span class="pre">partition_key</span></code> can be <cite>None</cite> if this is not relevant. A UUID is always generated for the <code class="docutils literal notranslate"><span class="pre">app_id</span></code> if not provided.</p>
-<p>You set these values using the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_identifiers" title="burr.core.application.ApplicationBuilder.with_identifiers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_identifiers()</span></code></a> method.</p>
-<p>Note: to access application-level metadata such as <code class="docutils literal notranslate"><span class="pre">app_id</span></code>, <code class="docutils literal notranslate"><span class="pre">partition_key</span></code>, <code class="docutils literal notranslate"><span class="pre">sequence_id</span></code>, and <code class="docutils literal notranslate"><span class="pre">action_name</span></code> in your running application, you can have the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationContext" title="burr.core.application.ApplicationContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationContext</span></code></a>
+<p>You set these values using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_identifiers()</span></code> method.</p>
+<p>Note: to access application-level metadata such as <code class="docutils literal notranslate"><span class="pre">app_id</span></code>, <code class="docutils literal notranslate"><span class="pre">partition_key</span></code>, <code class="docutils literal notranslate"><span class="pre">sequence_id</span></code>, and <code class="docutils literal notranslate"><span class="pre">action_name</span></code> in your running application, you can have the <code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationContext</span></code>
 injected into your Burr Actions. This is done by adding <code class="docutils literal notranslate"><span class="pre">__context</span></code> to the action signature:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">burr.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">action</span><span class="p">,</span> <span class="n">State</span><span class="p">,</span> <span class="n">ApplicationContext</span>
 
@@ -421,10 +421,10 @@ injected into your Burr Actions. This is done by adding <code class="docutils li
 </section>
 <section id="initializing-state">
 <h2>Initializing state<a class="headerlink" href="#initializing-state" title="Link to this heading">¶</a></h2>
-<p>To initialize state from a database, you can employ the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.initialize_from" title="burr.core.application.ApplicationBuilder.initialize_from"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize_from</span></code></a> method
-in the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder" title="burr.core.application.ApplicationBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code></a>. Important API note: unless <cite>fork_from_app_id</cite> is specified
-below, the values used to query for state are taken from the values provided to <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_identifiers" title="burr.core.application.ApplicationBuilder.with_identifiers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_identifiers()</span></code></a>.</p>
-<p>This action takes in an initializer (an implementation of <a class="reference internal" href="../../reference/persister/#burr.core.persistence.BaseStateLoader" title="burr.core.persistence.BaseStateLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">StateInitializer</span></code></a>) a well as:</p>
+<p>To initialize state from a database, you can employ the <code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize_from</span></code> method
+in the <code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code>. Important API note: unless <cite>fork_from_app_id</cite> is specified
+below, the values used to query for state are taken from the values provided to <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_identifiers()</span></code>.</p>
+<p>This action takes in an initializer (an implementation of <code class="xref py py-class docutils literal notranslate"><span class="pre">StateInitializer</span></code>) a well as:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">resume_at_next_action</span></code> – a boolean that says whether to start where you left off, or go back to the <code class="docutils literal notranslate"><span class="pre">default_entrypoint</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">default_entrypoint</span></code> – the entry point to start at if <code class="docutils literal notranslate"><span class="pre">resume_at_next_action</span></code> is False, or no state is found</p></li>
@@ -433,8 +433,8 @@ below, the values used to query for state are taken from the values provided to 
 <li><p><code class="docutils literal notranslate"><span class="pre">fork_from_partition_key</span></code> – Optional. The partition key to fork from. Goes with <code class="docutils literal notranslate"><span class="pre">fork_from_app_id</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fork_from_sequence_id</span></code> – Optional. The sequence_id to fork from. Goes with <code class="docutils literal notranslate"><span class="pre">fork_from_app_id</span></code>.</p></li>
 </ul>
-<p>Note (1): that you cannot use this in conjunction with <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_state" title="burr.core.application.ApplicationBuilder.with_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_state</span></code></a>
-or <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_entrypoint" title="burr.core.application.ApplicationBuilder.with_entrypoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_entrypoint</span></code></a> – these are mutually exclusive. If you’re
+<p>Note (1): that you cannot use this in conjunction with <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_state</span></code>
+or <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_entrypoint</span></code> – these are mutually exclusive. If you’re
 switching to use state persistence, all you need to do is remove the <code class="docutils literal notranslate"><span class="pre">with_state</span></code> and <code class="docutils literal notranslate"><span class="pre">with_entrypoint</span></code> calls and replace them with
 the default state and entrypoint in the <code class="docutils literal notranslate"><span class="pre">initialize_from</span></code> call.</p>
 <p>Note (2): The loader will not error if no state is found, it will use the default state in this case.</p>
@@ -445,7 +445,7 @@ but don’t want to add to it. The <code class="docutils literal notranslate"><s
 <code class="docutils literal notranslate"><span class="pre">fork_from_sequence_id</span></code> is used to identify the sequence_id to use. This is useful if you want to fork from a specific point in the application,
 rather than the latest state. This is especially useful for debugging, or building an application that enables you
 to rewind state and make different choices.</p>
-<p>When you use the <code class="docutils literal notranslate"><span class="pre">fork_from_app_id</span></code> to load state, the values passed to <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_identifiers" title="burr.core.application.ApplicationBuilder.with_identifiers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_identifiers()</span></code></a>
+<p>When you use the <code class="docutils literal notranslate"><span class="pre">fork_from_app_id</span></code> to load state, the values passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_identifiers()</span></code>
 will then dictate where the new application state is ultimately stored.</p>
 <p>For a quick overview of using it, Ashis from <a class="reference external" href="https://peanutrobotics.com">PeanutRobotics</a> has kindly submitted a
 video on how they use this feature:</p>
@@ -454,9 +454,9 @@ video on how they use this feature:</p>
 </section>
 <section id="writing-state">
 <h3>Writing state<a class="headerlink" href="#writing-state" title="Link to this heading">¶</a></h3>
-<p>To write state to a database, you can use the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_state_persister" title="burr.core.application.ApplicationBuilder.with_state_persister"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_state_persister</span></code></a> method in the
-<a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder" title="burr.core.application.ApplicationBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code></a>. This takes in a persister (an implementation of
-<a class="reference internal" href="../../reference/persister/#burr.core.persistence.BaseStatePersister" title="burr.core.persistence.BaseStatePersister"><code class="xref py py-class docutils literal notranslate"><span class="pre">StatePersister</span></code></a>). It writes state to the database after each action.</p>
+<p>To write state to a database, you can use the <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_state_persister</span></code> method in the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code>. This takes in a persister (an implementation of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">StatePersister</span></code>). It writes state to the database after each action.</p>
 </section>
 <section id="an-example">
 <h3>An example<a class="headerlink" href="#an-example" title="Link to this heading">¶</a></h3>
@@ -555,8 +555,8 @@ manager</p>
 </section>
 <section id="customizing-state-persistence">
 <h2>Customizing State Persistence<a class="headerlink" href="#customizing-state-persistence" title="Link to this heading">¶</a></h2>
-<p>Burr exposes two APIs <a class="reference internal" href="../../reference/persister/#burr.core.persistence.BaseStatePersister" title="burr.core.persistence.BaseStatePersister"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseStatePersister</span></code></a> (sync) and
-<a class="reference internal" href="../../reference/persister/#burr.core.persistence.AsyncBaseStatePersister" title="burr.core.persistence.AsyncBaseStatePersister"><code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncBaseStatePersister</span></code></a> (async) for custom state persistence. Implement,
+<p>Burr exposes two APIs <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseStatePersister</span></code> (sync) and
+<code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncBaseStatePersister</span></code> (async) for custom state persistence. Implement,
 pass into the above functions, and you can write to whatever database you want! Please contribute back to the community if you do so.</p>
 </section>
 <section id="loading-from-the-tracker">

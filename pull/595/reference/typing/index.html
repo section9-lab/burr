@@ -412,7 +412,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="burr.core.typing.TypingSystem.state_post_action_run_type">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state_post_action_run_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../application/#burr.core.graph.Graph" title="burr.core.graph.Graph"><span class="pre">Graph</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.core.typing.TypingSystem.state_post_action_run_type" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state_post_action_run_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.core.typing.TypingSystem.state_post_action_run_type" title="Link to this definition">¶</a></dt>
 <dd><p>Gives the type that represents the state after an action has completed.
 Note that this could be smart – E.g. it should have all possible upstream
 types filled in.</p>
@@ -428,7 +428,7 @@ types filled in.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="burr.core.typing.TypingSystem.state_pre_action_run_type">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state_pre_action_run_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../application/#burr.core.graph.Graph" title="burr.core.graph.Graph"><span class="pre">Graph</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.core.typing.TypingSystem.state_pre_action_run_type" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state_pre_action_run_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.core.typing.TypingSystem.state_pre_action_run_type" title="Link to this definition">¶</a></dt>
 <dd><p>Gives the type that represents the state after an action has completed.
 Note that this could be smart – E.g. it should have all possible upstream
 types filled in.</p>
@@ -465,121 +465,6 @@ adequate support for Optionals (E.G. non-required values).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.pydantic.</span></span><span class="sig-name descname"><span class="pre">PydanticTypingSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">StateModel</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem" title="Link to this definition">¶</a></dt>
-<dd><p>Typing system for pydantic models.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>TypingSystem</strong> – Parameterized on the state model type.</p>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">StateModel</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem.__init__" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem.construct_data">
-<span class="sig-name descname"><span class="pre">construct_data</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">StateModel</span></span></span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem.construct_data" title="Link to this definition">¶</a></dt>
-<dd><p>Constructs a type based on the arguments passed in.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>kwargs</strong></p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem.construct_state">
-<span class="sig-name descname"><span class="pre">construct_state</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StateModel</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem.construct_state" title="Link to this definition">¶</a></dt>
-<dd><p>Constructs a state based on the arguments passed in.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>kwargs</strong></p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem.state_post_action_run_type">
-<span class="sig-name descname"><span class="pre">state_post_action_run_type</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../application/#burr.core.graph.Graph" title="burr.core.graph.Graph"><span class="pre">Graph</span></a></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseModel</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem.state_post_action_run_type" title="Link to this definition">¶</a></dt>
-<dd><p>Gives the type that represents the state after an action has completed.
-Note that this could be smart – E.g. it should have all possible upstream
-types filled in.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>action</strong></p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem.state_pre_action_run_type">
-<span class="sig-name descname"><span class="pre">state_pre_action_run_type</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../application/#burr.core.graph.Graph" title="burr.core.graph.Graph"><span class="pre">Graph</span></a></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseModel</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem.state_pre_action_run_type" title="Link to this definition">¶</a></dt>
-<dd><p>Gives the type that represents the state after an action has completed.
-Note that this could be smart – E.g. it should have all possible upstream
-types filled in.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>action</strong></p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.pydantic.PydanticTypingSystem.state_type">
-<span class="sig-name descname"><span class="pre">state_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">StateModel</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.integrations.pydantic.PydanticTypingSystem.state_type" title="Link to this definition">¶</a></dt>
-<dd><p>Gives the type that represents the state of the
-application at any given time. Note that this must have
-adequate support for Optionals (E.G. non-required values).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p></p>
 </dd>
 </dl>
 </dd></dl>
@@ -665,15 +550,6 @@ adequate support for Optionals (E.G. non-required values).</p>
 <li><a class="reference internal" href="#burr.core.typing.TypingSystem.state_pre_action_run_type"><code class="docutils literal notranslate"><span class="pre">TypingSystem.state_pre_action_run_type()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.typing.TypingSystem.state_type"><code class="docutils literal notranslate"><span class="pre">TypingSystem.state_type()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.typing.TypingSystem.validate_state"><code class="docutils literal notranslate"><span class="pre">TypingSystem.validate_state()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem</span></code></a><ul>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem.__init__"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem.__init__()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem.construct_data"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem.construct_data()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem.construct_state"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem.construct_state()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem.state_post_action_run_type"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem.state_post_action_run_type()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem.state_pre_action_run_type"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem.state_pre_action_run_type()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.pydantic.PydanticTypingSystem.state_type"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem.state_type()</span></code></a></li>
 </ul>
 </li>
 </ul>

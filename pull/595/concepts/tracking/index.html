@@ -383,16 +383,16 @@ both in development and production.</p>
 <p>The data model for tracking is simple:</p>
 <ol class="arabic simple">
 <li><p><strong>Projects</strong> are the top-level grouping of data (the first page). This is specified in the constructor for the
-<a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_tracker" title="burr.core.application.ApplicationBuilder.with_tracker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code></a>, as the only required argument.</p></li>
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code>, as the only required argument.</p></li>
 <li><p><strong>Applications</strong> get logged to projects. An application would be considered similar to a “trace” in distributed
-tracing systems. This is (optionally) specified as the <code class="docutils literal notranslate"><span class="pre">app_id</span></code> argument for the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_tracker" title="burr.core.application.ApplicationBuilder.with_tracker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code></a>
+tracing systems. This is (optionally) specified as the <code class="docutils literal notranslate"><span class="pre">app_id</span></code> argument for the <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code>
 method. A single <code class="docutils literal notranslate"><span class="pre">application</span></code> has shared state path across all its steps.</p></li>
 <li><p><strong>Steps</strong> are the individual steps that are executed in the state machine. The Burr UI will show the state of the
 state machine at the time of the step execution, as well as the input to and results of the step.</p></li>
 </ol>
 <section id="tracking-client">
 <span id="trackingclientref"></span><h2>Tracking Client<a class="headerlink" href="#tracking-client" title="Link to this heading">¶</a></h2>
-<p>When you use <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_tracker" title="burr.core.application.ApplicationBuilder.with_tracker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code></a>, you add a tracker to Burr.
+<p>When you use <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code>, you add a tracker to Burr.
 This is a lifecycle hook that does the following:</p>
 <ol class="arabic simple">
 <li><p>Logs the static representation of the state machine</p></li>
@@ -407,14 +407,14 @@ This is a lifecycle hook that does the following:</p>
 </dl>
 </li>
 </ol>
-<p>This currently defaults to (and only supports) the <a class="reference internal" href="../../reference/tracking/#burr.tracking.LocalTrackingClient" title="burr.tracking.LocalTrackingClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code></a> class, which
+<p>This currently defaults to (and only supports) the <code class="xref py py-class docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code> class, which
 writes to a local file system, although we will be making it pluggable in the future. It will, by default, write to the directory
 <code class="docutils literal notranslate"><span class="pre">~/.burr</span></code>.</p>
 <section id="debugging-via-reloading-prior-state">
 <h3>Debugging via Reloading Prior State<a class="headerlink" href="#debugging-via-reloading-prior-state" title="Link to this heading">¶</a></h3>
 <p>Because the tracking client writes to the file system, you can reload the state of the state machine at any time. This is
 useful for debugging, because you can quickly recreate the issue by running the state machine with the same point in time.</p>
-<p>To do so, you’d use the classmethod _load()_ on the <a class="reference internal" href="../../reference/tracking/#burr.tracking.LocalTrackingClient" title="burr.tracking.LocalTrackingClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code></a>.</p>
+<p>To do so, you’d use the classmethod _load()_ on the <code class="xref py py-class docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code>.</p>
 <p>For example, to debug your Burr Application, you’d have some control flow like this using the <cite>.initialize_from(…)</cite> and <cite>fork_from_*</cite> functionality:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">burr.tracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTrackingClient</span>
 

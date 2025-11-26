@@ -390,7 +390,7 @@ various places in a node’s execution. For instance, you could:</p>
 <p>To implement hooks, you subclass any number of the <a class="reference internal" href="../../reference/lifecycle/#hooksref"><span class="std std-ref">available lifecycle hooks</span></a>.
 These have synchronous and asynchronous versions, and your hook can subclass as many as you want
 (as long as it doesn’t do both the synchronous and asynchronous versions of the same hook).</p>
-<p>To use them, you pass them into the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder" title="burr.core.application.ApplicationBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code></a> as a <code class="docutils literal notranslate"><span class="pre">*args</span></code> list of hooks. For instance,
+<p>To use them, you pass them into the <code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code> as a <code class="docutils literal notranslate"><span class="pre">*args</span></code> list of hooks. For instance,
 a hook that prints out the nodes name during execution looks like this.
 We implement the pre/post run step hooks.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PrintLnHook</span><span class="p">(</span><span class="n">PostRunStepHook</span><span class="p">,</span> <span class="n">PreRunStepHook</span><span class="p">):</span>
@@ -410,7 +410,7 @@ We implement the pre/post run step hooks.</p>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finishing action: </span><span class="si">{</span><span class="n">action</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>To include this in the application, you pass it into the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_hooks" title="burr.core.application.ApplicationBuilder.with_hooks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_hooks</span></code></a> method.</p>
+<p>To include this in the application, you pass it into the <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_hooks</span></code> method.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">app</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">ApplicationBuilder</span><span class="p">()</span>
     <span class="o">.</span><span class="n">with_hooks</span><span class="p">(</span><span class="n">PrintLnHook</span><span class="p">())</span>

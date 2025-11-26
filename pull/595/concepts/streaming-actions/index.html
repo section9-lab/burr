@@ -522,8 +522,8 @@ that it only yields the <code class="docutils literal notranslate"><span class="
 </details></section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
-<p>When you call out to <a class="reference internal" href="../../reference/application/#burr.core.application.Application.stream_result" title="burr.core.application.Application.stream_result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stream_result</span></code></a> (as well as its corresponding async implementation
-<a class="reference internal" href="../../reference/application/#burr.core.application.Application.astream_result" title="burr.core.application.Application.astream_result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astream_result</span></code></a> on a streaming action, you will get
+<p>When you call out to <code class="xref py py-meth docutils literal notranslate"><span class="pre">stream_result</span></code> (as well as its corresponding async implementation
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">astream_result</span></code> on a streaming action, you will get
 a <a class="reference internal" href="../../reference/actions/#burr.core.action.StreamingResultContainer" title="burr.core.action.StreamingResultContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">StreamingResultContainer</span></code></a>, or a <a class="reference internal" href="../../reference/actions/#burr.core.action.AsyncStreamingResultContainer" title="burr.core.action.AsyncStreamingResultContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncStreamingResultContainerAsync</span></code></a>
 object.</p>
 <p>This object is effectively a cached iterator. You can use it as follows:</p>

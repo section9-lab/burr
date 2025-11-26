@@ -377,18 +377,8 @@ That means that if you find something not in here, it’s not part of the public
 need functionality that is not publicly exposed, please open an issue and we can discuss adding it!</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="application/">Applications</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="application/#burr.core.application.ApplicationBuilder"><code class="docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="application/#burr.core.application.Application"><code class="docutils literal notranslate"><span class="pre">Application</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="application/#burr.core.application.ApplicationGraph"><code class="docutils literal notranslate"><span class="pre">ApplicationGraph</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="application/#burr.core.application.ApplicationContext"><code class="docutils literal notranslate"><span class="pre">ApplicationContext</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="application/#graph-apis">Graph APIs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="application/#burr.core.graph.GraphBuilder"><code class="docutils literal notranslate"><span class="pre">GraphBuilder</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="application/#burr.core.graph.Graph"><code class="docutils literal notranslate"><span class="pre">Graph</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="application/">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="application/#graph-apis">Graph APIs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actions/">Actions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="actions/#burr.core.action.Action"><code class="docutils literal notranslate"><span class="pre">Action</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="actions/#burr.core.action.Result"><code class="docutils literal notranslate"><span class="pre">Result</span></code></a></li>
@@ -416,12 +406,6 @@ need functionality that is not publicly exposed, please open an issue and we can
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="persister/">State Persistence</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="persister/#burr.core.persistence.BaseStatePersister"><code class="docutils literal notranslate"><span class="pre">BaseStatePersister</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="persister/#burr.core.persistence.BaseStateLoader"><code class="docutils literal notranslate"><span class="pre">BaseStateLoader</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="persister/#burr.core.persistence.BaseStateSaver"><code class="docutils literal notranslate"><span class="pre">BaseStateSaver</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="persister/#burr.core.persistence.AsyncBaseStatePersister"><code class="docutils literal notranslate"><span class="pre">AsyncBaseStatePersister</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="persister/#burr.core.persistence.AsyncBaseStateLoader"><code class="docutils literal notranslate"><span class="pre">AsyncBaseStateLoader</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="persister/#burr.core.persistence.AsyncBaseStateSaver"><code class="docutils literal notranslate"><span class="pre">AsyncBaseStateSaver</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="persister/#supported-sync-implementations">Supported Sync Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="persister/#supported-async-implementations">Supported Async Implementations</a></li>
 </ul>
@@ -430,10 +414,7 @@ need functionality that is not publicly exposed, please open an issue and we can
 <li class="toctree-l2"><a class="reference internal" href="conditions/#burr.core.action.Condition"><code class="docutils literal notranslate"><span class="pre">Condition</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tracking/">Tracking</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tracking/#burr.tracking.LocalTrackingClient"><code class="docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="tracking/">Tracking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visibility/">Tracing Inside Actions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="visibility/#burr.visibility.tracing.TracerFactory"><code class="docutils literal notranslate"><span class="pre">TracerFactory</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="visibility/#burr.visibility.tracing.ActionSpanTracer"><code class="docutils literal notranslate"><span class="pre">ActionSpanTracer</span></code></a></li>
@@ -460,19 +441,9 @@ need functionality that is not publicly exposed, please open an issue and we can
 <li class="toctree-l2"><a class="reference internal" href="lifecycle/#burr.lifecycle.default.SlowDownHook"><code class="docutils literal notranslate"><span class="pre">SlowDownHook</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="parallelism/">Parallelism</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.RunnableGraph"><code class="docutils literal notranslate"><span class="pre">RunnableGraph</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.SubGraphTask"><code class="docutils literal notranslate"><span class="pre">SubGraphTask</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.TaskBasedParallelAction"><code class="docutils literal notranslate"><span class="pre">TaskBasedParallelAction</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.MapActionsAndStates"><code class="docutils literal notranslate"><span class="pre">MapActionsAndStates</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.MapActions"><code class="docutils literal notranslate"><span class="pre">MapActions</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.MapStates"><code class="docutils literal notranslate"><span class="pre">MapStates</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallelism/#burr.core.parallelism.map_reduce_action"><code class="docutils literal notranslate"><span class="pre">parallelism.map_reduce_action()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="parallelism/">Parallelism</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typing/">Typing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="typing/#burr.core.typing.TypingSystem"><code class="docutils literal notranslate"><span class="pre">TypingSystem</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="typing/#burr.integrations.pydantic.PydanticTypingSystem"><code class="docutils literal notranslate"><span class="pre">PydanticTypingSystem</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="integrations/">Integrations</a><ul>

@@ -191,7 +191,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
@@ -365,7 +365,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
@@ -385,96 +385,6 @@
 <li><p><a class="reference external" href="https://opentelemetry.io/">OpenTelemetry</a></p></li>
 </ul>
 <p>Reference for the various useful methods:</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.opentelemetry.</span></span><span class="sig-name descname"><span class="pre">OpenTelemetryBridge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tracer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tracer</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge" title="Link to this definition">¶</a></dt>
-<dd><p>Adapter to log Burr events to OpenTelemetry. At a high level, this works as follows:</p>
-<ol class="arabic simple">
-<li><p>On any of the start/pre hooks (pre_run_execute_call, pre_run_step, pre_start_span), we start a new span</p></li>
-<li><p>On any of the post ones we exit the span, accounting for the error (setting it if needed)</p></li>
-<li><p>On do_log_attributes, we log the attributes to the current span – these are serialized using the serde module</p></li>
-</ol>
-<p>This works by logging to OpenTelemetry, and setting the span processor to be the right one (that knows about the tracker).</p>
-<p>You can use this as follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># replace with instructions from your prefered vendor</span>
-<span class="n">my_vendor_library_or_tracer_provider</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
-
-<span class="n">app</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">ApplicationBuilder</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">with_entrypoint</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">with_state</span><span class="p">(</span><span class="n">chat_history</span><span class="o">=</span><span class="p">[])</span>
-    <span class="o">.</span><span class="n">with_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">with_hooks</span><span class="p">(</span><span class="n">OpenTelemetryBridge</span><span class="p">())</span>
-    <span class="o">.</span><span class="n">build</span><span class="p">()</span>
-<span class="p">)</span>
-
-<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="c1"># will log to OpenTelemetry</span>
-</pre></div>
-</div>
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step">
-<span class="sig-name descname"><span class="pre">post_run_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Exception</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step" title="Link to this definition">¶</a></dt>
-<dd><p>Run after a step is executed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>state</strong> – State after step execution</p></li>
-<li><p><strong>action</strong> – Action that was executed</p></li>
-<li><p><strong>result</strong> – Result of the action</p></li>
-<li><p><strong>sequence_id</strong> – Sequence ID of the action</p></li>
-<li><p><strong>exception</strong> – Exception that was raised</p></li>
-<li><p><strong>future_kwargs</strong> – Future keyword arguments</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step">
-<span class="sig-name descname"><span class="pre">pre_run_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step" title="Link to this definition">¶</a></dt>
-<dd><p>Run before a step is executed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>state</strong> – State prior to step execution</p></li>
-<li><p><strong>action</strong> – Action to be executed</p></li>
-<li><p><strong>inputs</strong> – Inputs to the action</p></li>
-<li><p><strong>sequence_id</strong> – Sequence ID of the action</p></li>
-<li><p><strong>future_kwargs</strong> – Future keyword arguments</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.init_instruments">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.opentelemetry.</span></span><span class="sig-name descname"><span class="pre">init_instruments</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">instruments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'openai'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'anthropic'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'cohere'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'google_generativeai'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mistral'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ollama'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'transformers'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'together'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'bedrock'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'replicate'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'vertexai'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'groq'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'watsonx'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'alephalpha'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'pinecone'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'qdrant'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'chroma'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'milvus'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'weaviate'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'lancedb'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'marqo'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'redis'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'langchain'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'llama_index'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'haystack'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'requests'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'httpx'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'urllib'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'urllib3'</span></span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">init_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#burr.integrations.opentelemetry.init_instruments" title="Link to this definition">¶</a></dt>
-<dd><p>Instruments the specified libraries, or all that are installed if it is enabled.</p>
-<p>This will check if any libraries are available in the current environment and
-initialize if they are. See the <code class="docutils literal notranslate"><span class="pre">INSTRUMENTS_SPECS</span></code> field for the list of
-available libraries.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>instruments</strong> – Name of libraries to instrument (e.g., <cite>requests</cite>, <cite>openai</cite>)</p></li>
-<li><p><strong>init_all</strong> – If True, initialize all available instruments for imported packages.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 
         </article>
@@ -533,32 +443,8 @@ available libraries.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">OpenTelemetry</a><ul>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge</span></code></a><ul>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.post_run_step()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.pre_run_step()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.init_instruments"><code class="docutils literal notranslate"><span class="pre">init_instruments()</span></code></a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>

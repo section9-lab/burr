@@ -378,18 +378,18 @@
 <ol class="arabic simple">
 <li><p>Use the <code class="docutils literal notranslate"><span class="pre">async</span></code> interfaces when you have I/O-heavy applications that require horizontal scaling, and have available asynchronous APIs (E.G. async LLM APIs in a web-service like FastAPI)</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.abuild" title="burr.core.application.ApplicationBuilder.abuild"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.abuild()</span></code></a></p></li>
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.Application.aiterate" title="burr.core.application.Application.aiterate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.aiterate()</span></code></a></p></li>
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.Application.arun" title="burr.core.application.Application.arun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.arun()</span></code></a></p></li>
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.Application.astream_result" title="burr.core.application.Application.astream_result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.astream_result()</span></code></a></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.abuild()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.aiterate()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.arun()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.astream_result()</span></code></p></li>
 </ul>
 </li>
 <li><p>Use the synchronous interfaces otherwise – when you have high CPU-bound applications (running models locally), or do not have async APIs to use:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.build" title="burr.core.application.ApplicationBuilder.build"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.build()</span></code></a></p></li>
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.Application.iterate" title="burr.core.application.Application.iterate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.iterate()</span></code></a></p></li>
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.Application.run" title="burr.core.application.Application.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.run()</span></code></a></p></li>
-<li><p><a class="reference internal" href="../../reference/application/#burr.core.application.Application.stream_result" title="burr.core.application.Application.stream_result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.stream_result()</span></code></a></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.build()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.iterate()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.run()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">.stream_result()</span></code></p></li>
 </ul>
 </li>
 </ol>

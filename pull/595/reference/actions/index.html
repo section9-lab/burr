@@ -986,7 +986,7 @@ This is not (yet) exposed as an interface for users to extend.</p>
 iterator that caches the final result after calling it. This is meant to be used
 exclusively with the streaming action calls in <cite>Application</cite>. Note that you will
 never instantiate this class directly, but you will use it in the API when it is returned
-by <a class="reference internal" href="../application/#burr.core.application.Application.stream_result" title="burr.core.application.Application.stream_result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stream_result</span></code></a>.
+by <code class="xref py py-meth docutils literal notranslate"><span class="pre">stream_result</span></code>.
 For reference, here’s how you would use it:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">action_we_just_ran</span><span class="p">,</span> <span class="n">streaming_result_container</span> <span class="o">=</span> <span class="n">application</span><span class="o">.</span><span class="n">stream_result</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;getting streaming results for action=</span><span class="si">{</span><span class="n">action_we_just_ran</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1033,7 +1033,7 @@ result container.</p>
 iterator that caches the final result after calling it. This is meant to be used
 exclusively with the streaming action calls in <cite>Application</cite>. Note that you will
 never instantiate this class directly, but you will use it in the API when it is returned
-by <a class="reference internal" href="../application/#burr.core.application.Application.stream_result" title="burr.core.application.Application.stream_result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astream_result</span></code></a>.
+by <code class="xref py py-meth docutils literal notranslate"><span class="pre">astream_result</span></code>.
 For reference, here’s how you would use it:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">action_we_just_ran</span><span class="p">,</span> <span class="n">streaming_result_container</span> <span class="o">=</span> <span class="k">await</span> <span class="n">application</span><span class="o">.</span><span class="n">stream_result</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;getting streaming results for action=</span><span class="si">{</span><span class="n">action_we_just_ran</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

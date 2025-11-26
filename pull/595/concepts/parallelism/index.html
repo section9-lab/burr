@@ -831,16 +831,16 @@ will be created as a a stable hash of the parent ID + the index of the child ID,
 </ol>
 <p>The default behavior is to cascade all the following constructs through to the parallel child applications:</p>
 <ol class="arabic simple">
-<li><p>Tracking (given by the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_tracker" title="burr.core.application.ApplicationBuilder.with_tracker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder.with_tracker()</span></code></a> function in <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder" title="burr.core.application.ApplicationBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code></a>)</p></li>
-<li><p>State saving/persistence (given by the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_state_persister" title="burr.core.application.ApplicationBuilder.with_state_persister"><code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder.with_state_persister()</span></code></a> function in <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder" title="burr.core.application.ApplicationBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder</span></code></a>)</p></li>
-<li><p>State loading (given by the <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.initialize_from" title="burr.core.application.ApplicationBuilder.initialize_from"><code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder.initialize_from()</span></code></a> function in <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder" title="burr.core.application.ApplicationBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder</span></code></a>)</p></li>
+<li><p>Tracking (given by the <code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder.with_tracker()</span></code> function in <code class="xref py py-class docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code>)</p></li>
+<li><p>State saving/persistence (given by the <code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder.with_state_persister()</span></code> function in <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder</span></code>)</p></li>
+<li><p>State loading (given by the <code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder.initialize_from()</span></code> function in <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.application.ApplicationBuilder</span></code>)</p></li>
 </ol>
 <p>These will then be passed ot the corresponding sub-application tasks. If any of these objects implement a <cite>.copy()</cite> method, that will be called. Otherwise the same instance will be created. Not the tracker/persister/loader must be serializable
 to work in non-multithreaded executors, and thread-safe to work in multithreaded instances.</p>
 <p>In mst cases, (2) and (3) above will be the same, however there all valid use-cases where you might want to use different persisters/loaders for the sub-application.
 Thus, the default will be to pass the same instance for (2) and (3), <em>if</em> they both exist and are specified.</p>
 <p>You can disable either tracking or persistence at the sub-application level by overriding one of the three methods (corresponding to the three adapter-types above),
-on any of the <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.MapStatesAndActions</span></code>, <a class="reference internal" href="../../reference/parallelism/#burr.core.parallelism.MapStates" title="burr.core.parallelism.MapStates"><code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.MapStates</span></code></a>, or <a class="reference internal" href="../../reference/parallelism/#burr.core.parallelism.MapActions" title="burr.core.parallelism.MapActions"><code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.MapActions</span></code></a> classes.</p>
+on any of the <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.MapStatesAndActions</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.MapStates</span></code>, or <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.MapActions</span></code> classes.</p>
 <p>If you return <cite>None</cite>, then no tracker/persister will be used. If you return an object (E.G. a tracker or a persister), that will be used instead.
 The function will be called for every instance of the sub-application.</p>
 <ol class="arabic simple">
@@ -848,7 +848,7 @@ The function will be called for every instance of the sub-application.</p>
 <li><p>Overriding the persister <code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.parallelism.MapStatesAndAction.state_persister()</span></code></p></li>
 <li><p>Overriding the loader <code class="xref py py-meth docutils literal notranslate"><span class="pre">burr.core.parallelism.MapStatesAndAction.state_initializer()</span></code></p></li>
 </ol>
-<p>You can also set the corresponding fields in the <a class="reference internal" href="../../reference/parallelism/#burr.core.parallelism.SubGraphTask" title="burr.core.parallelism.SubGraphTask"><code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.SubGraphTask</span></code></a> object on a per-task basis,
+<p>You can also set the corresponding fields in the <code class="xref py py-class docutils literal notranslate"><span class="pre">burr.core.parallelism.SubGraphTask</span></code> object on a per-task basis,
 if you are using the lower-level API.</p>
 <p>You can also disable it globally using the application builder:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">TestMultiplePrompts</span><span class="p">(</span><span class="n">MapStates</span><span class="p">):</span>
@@ -902,7 +902,7 @@ if you are using the lower-level API.</p>
 <h3>Interleaving Generators<a class="headerlink" href="#interleaving-generators" title="Link to this heading">¶</a></h3>
 <p>Say you want to provide an agent that provides up-to-date progress on it’s thoughts. For example, say you want to providea
 a planning agent with a similar interface to OpenAI’s o1 model.</p>
-<p>To do this, you would typically call to <a class="reference internal" href="../../reference/application/#burr.core.application.Application.iterate" title="burr.core.application.Application.iterate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">iterate</span></code></a>. Now, say you wanted to run
+<p>To do this, you would typically call to <code class="xref py py-meth docutils literal notranslate"><span class="pre">iterate</span></code>. Now, say you wanted to run
 multiple in parallel!</p>
 <p>While this is not built to be easy with the APIs in this section, it’s very doable with the underlying recursion API.</p>
 <p>The basics (code not present now):</p>
@@ -921,8 +921,8 @@ if you’re concerned about latency – thus if the user wants more or does not 
 LLM might come up with a solution.</p>
 <p>To do this, you would:</p>
 <ol class="arabic simple">
-<li><p>Run the sub-graph consisting of the first LLM using <a class="reference internal" href="../../reference/application/#burr.core.application.Application.iterate" title="burr.core.application.Application.iterate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">iterate</span></code></a></p></li>
-<li><p>Simultaneously run the second LLM using <a class="reference internal" href="../../reference/application/#burr.core.application.Application.iterate" title="burr.core.application.Application.iterate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">iterate</span></code></a> as well</p></li>
+<li><p>Run the sub-graph consisting of the first LLM using <code class="xref py py-meth docutils literal notranslate"><span class="pre">iterate</span></code></p></li>
+<li><p>Simultaneously run the second LLM using <code class="xref py py-meth docutils literal notranslate"><span class="pre">iterate</span></code> as well</p></li>
 <li><p>Join them in parallel, waiting for any user-input if provided</p></li>
 <li><p>Decide after every step of the first graph whether you want to cancel the second graph or not – E.G. is the user satisfied.</p></li>
 </ol>

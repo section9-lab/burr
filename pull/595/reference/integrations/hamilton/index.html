@@ -191,7 +191,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
@@ -365,7 +365,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
@@ -373,90 +373,6 @@
           <section id="hamilton">
 <h1>Hamilton<a class="headerlink" href="#hamilton" title="Link to this heading">¶</a></h1>
 <p>Full Hamilton integration. Touch-points are custom Hamilton actions. This is installed by default.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.hamilton.Hamilton">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.hamilton.</span></span><span class="sig-name descname"><span class="pre">Hamilton</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">StateSource</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">LiteralSource</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Output</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">driver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Driver</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.hamilton.Hamilton" title="Link to this definition">¶</a></dt>
-<dd><p>Interface to represent the ‘computing’ part of an action</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.hamilton.from_state">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.hamilton.</span></span><span class="sig-name descname"><span class="pre">from_state</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">missing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'drop'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'error'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'error'</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">StateSource</span></span></span><a class="headerlink" href="#burr.integrations.hamilton.from_state" title="Link to this definition">¶</a></dt>
-<dd><p>Indicates that an input should come from state.
-Specify “missing” to allow for missing keys to be dropped or raise an error.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>key</strong> – Key in state to use</p></li>
-<li><p><strong>missing</strong> – What to do if the key is missing</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A StateSource object – use by Hamilton(inputs=…)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.hamilton.from_value">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.hamilton.</span></span><span class="sig-name descname"><span class="pre">from_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">LiteralSource</span></span></span><a class="headerlink" href="#burr.integrations.hamilton.from_value" title="Link to this definition">¶</a></dt>
-<dd><p>Indicates that an input should come from a literal (variable/constant) value.
-Use this if you just want to fix a parameter into the Hamilton DAG.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – Value to use</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A LiteralSource object – use by Hamilton(inputs=…)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.hamilton.update_state">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.hamilton.</span></span><span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Output</span></span></span><a class="headerlink" href="#burr.integrations.hamilton.update_state" title="Link to this definition">¶</a></dt>
-<dd><p>At the update step of a Hamilton Action, call state.update to the key field of state.
-Used with outputs= parameter of Hamilton(…)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>key</strong> – Field in state to udpate</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>An Output object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.hamilton.append_state">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.hamilton.</span></span><span class="sig-name descname"><span class="pre">append_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.hamilton.append_state" title="Link to this definition">¶</a></dt>
-<dd><p>At the update state of a Hamilton Action, call state.append to the key field of state.
-Used with outputs= parameter of Hamilton(…)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>key</strong> – Field in state to append to</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>An Output object</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 
         </article>
@@ -515,31 +431,8 @@ Used with outputs= parameter of Hamilton(…)</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">Hamilton</a><ul>
-<li><a class="reference internal" href="#burr.integrations.hamilton.Hamilton"><code class="docutils literal notranslate"><span class="pre">Hamilton()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.hamilton.from_state"><code class="docutils literal notranslate"><span class="pre">from_state()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.hamilton.from_value"><code class="docutils literal notranslate"><span class="pre">from_value()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.hamilton.update_state"><code class="docutils literal notranslate"><span class="pre">update_state()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.hamilton.append_state"><code class="docutils literal notranslate"><span class="pre">append_state()</span></code></a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>

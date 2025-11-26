@@ -449,7 +449,7 @@ an object that instantiates spans and tracks state.</p>
 of an action, but is likely best used with integrations with micro-orchestration systems for implementating actions, such as Hamilton or Lanchain.
 This maps to the <a class="reference external" href="https://opentelemetry.io/docs/concepts/signals/traces/#span-links">span link</a> concept in OpenTelemetry.</p>
 <p>Note that, on the surface, this doesn’t actually <em>do</em> anything. It has to be paired with the appropriate hooks.
-These just function as callbacks (on enter/exit). The <a class="reference internal" href="../../reference/tracking/#burr.tracking.LocalTrackingClient" title="burr.tracking.LocalTrackingClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code></a>, used by the
+These just function as callbacks (on enter/exit). The <code class="xref py py-class docutils literal notranslate"><span class="pre">LocalTrackingClient</span></code>, used by the
 <a class="reference internal" href="../tracking/#tracking"><span class="std std-ref">tracking</span></a> feature forms one of these hooks, but we will be adding more, including:</p>
 <ol class="arabic simple">
 <li><p>An OpenTelemetry client</p></li>
@@ -550,7 +550,7 @@ capture OpenTelemetry events with tracking.</p>
 <h3>Capturing OpenTelemetry events<a class="headerlink" href="#capturing-opentelemetry-events" title="Link to this heading">¶</a></h3>
 <p>Burr can capture OpenTelemetry traces/spans that are logged from within a Burr step.
 These get tracked in the UI, which can display traces and attributes, as explained above.</p>
-<p>To do this, you just have to set the <code class="docutils literal notranslate"><span class="pre">use_otel_tracing</span></code> flag on <a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_tracker" title="burr.core.application.ApplicationBuilder.with_tracker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code></a>
+<p>To do this, you just have to set the <code class="docutils literal notranslate"><span class="pre">use_otel_tracing</span></code> flag on <code class="xref py py-meth docutils literal notranslate"><span class="pre">with_tracker</span></code>
 function in the <code class="docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code>. This will automatically capture all OpenTelemetry traces, mixing them with Burr traces. Take the following (contrived)
 example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">burr.visibility</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracerFactory</span>
@@ -594,8 +594,8 @@ more complete integration in the future.</p>
 <section id="logging-to-opentelemetry">
 <h3>Logging to OpenTelemetry<a class="headerlink" href="#logging-to-opentelemetry" title="Link to this heading">¶</a></h3>
 <p>Burr can also log to any OpenTelemetry provider, again enabling mixing/matching of spans. To do this,
-you simply need to pass an instance of the <a class="reference internal" href="../../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge" title="burr.integrations.opentelemetry.OpenTelemetryBridge"><code class="xref py py-class docutils literal notranslate"><span class="pre">OpenTelemetryBridge</span></code></a> to the
-<a class="reference internal" href="../../reference/application/#burr.core.application.ApplicationBuilder.with_hooks" title="burr.core.application.ApplicationBuilder.with_hooks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">with_hooks</span></code></a> method of the <code class="docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code>. This will automatically
+you simply need to pass an instance of the <code class="xref py py-class docutils literal notranslate"><span class="pre">OpenTelemetryBridge</span></code> to the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">with_hooks</span></code> method of the <code class="docutils literal notranslate"><span class="pre">ApplicationBuilder</span></code>. This will automatically
 log all spans to the OpenTelemetry provider of choice (and you are responsible for initializes
 it as you see fit).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">burr.integrations.opentelemetry</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenTelemetryBridge</span>
