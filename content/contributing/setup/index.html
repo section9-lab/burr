@@ -389,6 +389,17 @@ Replace with your package manager of choice if you prefer.</p>
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[developer]&quot;</span>
 </pre></div>
 </div>
+<p>You can also use dependency group:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--group<span class="w"> </span>dev
+</pre></div>
+</div>
+<p>or, if you use <code class="docutils literal notranslate"><span class="pre">uv</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync
+</pre></div>
+</div>
+<p>The latter command will automatically create and install virtual env if one does not exist and will
+automatically install the project in editable mode with all developer dependencies defined in dev
+dependency group.</p>
 <p>This will install all potential dependencies. Burr will work with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">&gt;=3.9</span></code>.</p>
 </section>
 <section id="linting-pre-commit">

@@ -478,6 +478,16 @@ must correspond to an integer, or an error will be raised.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="burr.core.state.State.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#burr.core.state.State.keys" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a list of the state keys only (without values for cleaner display).</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>list: A list of state keys</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="burr.core.state.State.merge">
 <span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a><span class="p"><span class="pre">[</span></span><span class="pre">StateType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.core.state.State.merge" title="Link to this definition">¶</a></dt>
 <dd><p>Merges two states together, overwriting the values in self
@@ -670,6 +680,7 @@ tracking / persistence.</p>
 <li><a class="reference internal" href="#burr.core.state.State.extend"><code class="docutils literal notranslate"><span class="pre">State.extend()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.state.State.get_all"><code class="docutils literal notranslate"><span class="pre">State.get_all()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.state.State.increment"><code class="docutils literal notranslate"><span class="pre">State.increment()</span></code></a></li>
+<li><a class="reference internal" href="#burr.core.state.State.keys"><code class="docutils literal notranslate"><span class="pre">State.keys()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.state.State.merge"><code class="docutils literal notranslate"><span class="pre">State.merge()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.state.State.serialize"><code class="docutils literal notranslate"><span class="pre">State.serialize()</span></code></a></li>
 <li><a class="reference internal" href="#burr.core.state.State.subset"><code class="docutils literal notranslate"><span class="pre">State.subset()</span></code></a></li>
