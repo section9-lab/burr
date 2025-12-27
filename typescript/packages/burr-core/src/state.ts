@@ -17,6 +17,8 @@
  * under the License.
  */
 
+import { z } from 'zod';
+
 // ============================================================================
 // Type Utilities for Type-Safe State Operations
 // ============================================================================
@@ -46,33 +48,45 @@ export type ArrayElement<T> = T extends Array<infer U> ? U : never;
 
 /**
  * Represents a state transformation operation.
- * Operations are immutable, serializable objects that can be applied to state.
+ * Type parameters track input and output state shapes for compile-time tracking.
+ * 
+ * @template TIn - Input state shape
+ * @template TOut - Output state shape (may be extended with new fields)
  */
-export interface Operation<T extends Record<string, any>> {
+export interface Operation<
+  TIn extends Record<string, any>,
+  TOut extends Record<string, any> = TIn
+> {
   /** Unique name for this operation type (for serialization) */
   readonly name: string;
 
   /** Returns the keys this operation reads from state */
-  reads(): (keyof T)[];
+  reads(): (keyof TIn)[];
 
   /** Returns the keys this operation writes to state */
-  writes(): (keyof T)[];
+  writes(): (keyof TOut)[];
 
   /** Validates that this operation can be applied to the given state */
-  validate(state: T): void;
+  validate(state: TIn): void;
 
   /** Applies this operation to state, mutating it in place */
-  apply(state: T): void;
+  apply(state: TIn): void;
 
   /** Serializes this operation to a JSON-compatible object */
   serialize(): Record<string, any>;
+  
+  /** Returns Zod schema extensions for new fields (empty object if no extensions) */
+  schemaExtensions(): Record<string, z.ZodTypeAny>;
 }
 
 /**
  * Constructor interface for operation deserialization
  */
-export interface OperationConstructor<T extends Record<string, any>> {
-  deserialize(data: Record<string, any>): Operation<T>;
+export interface OperationConstructor<
+  TIn extends Record<string, any>,
+  TOut extends Record<string, any> = TIn
+> {
+  deserialize(data: Record<string, any>): Operation<TIn, TOut>;
 }
 
 // ============================================================================
@@ -80,26 +94,39 @@ export interface OperationConstructor<T extends Record<string, any>> {
 // ============================================================================
 
 /**
- * Operation that sets/updates fields in state
+ * Operation that sets/updates fields in state.
+ * TOut = TIn & TUpdates (output includes new fields from updates)
  */
-export class SetFieldsOperation<T extends Record<string, any>> implements Operation<T> {
+export class SetFieldsOperation<
+  TIn extends Record<string, any>,
+  TUpdates extends Record<string, any> = Partial<TIn>
+> implements Operation<TIn, TIn & TUpdates> {
   readonly name = 'set';
 
-  constructor(private updates: Partial<T>) {}
+  constructor(private updates: TUpdates) {}
 
-  reads(): (keyof T)[] {
-    return Object.keys(this.updates) as (keyof T)[];
+  reads(): (keyof TIn)[] {
+    return Object.keys(this.updates) as (keyof TIn)[];
   }
 
-  writes(): (keyof T)[] {
-    return Object.keys(this.updates) as (keyof T)[];
+  writes(): (keyof (TIn & TUpdates))[] {
+    return Object.keys(this.updates) as (keyof (TIn & TUpdates))[];
   }
 
-  validate(_state: T): void {
+  schemaExtensions(): Record<string, z.ZodTypeAny> {
+    // New fields get z.unknown() schema
+    const extensions: Record<string, z.ZodTypeAny> = {};
+    for (const key in this.updates) {
+      extensions[key] = z.unknown();
+    }
+    return extensions;
+  }
+
+  validate(_state: TIn): void {
     // No validation needed for set operations
   }
 
-  apply(state: T): void {
+  apply(state: TIn): void {
     Object.assign(state, this.updates);
   }
 
@@ -110,10 +137,10 @@ export class SetFieldsOperation<T extends Record<string, any>> implements Operat
     };
   }
 
-  static deserialize<T extends Record<string, any>>(
+  static deserialize<TIn extends Record<string, any>>(
     data: Record<string, any>
-  ): SetFieldsOperation<T> {
-    return new SetFieldsOperation<T>(data.updates);
+  ): SetFieldsOperation<TIn> {
+    return new SetFieldsOperation<TIn>(data.updates);
   }
 }
 
@@ -122,7 +149,7 @@ export class SetFieldsOperation<T extends Record<string, any>> implements Operat
  * Type-safe: only allows appending to array fields with correct element types
  */
 export class AppendFieldOperation<T extends Record<string, any>, K extends ArrayKeys<T>>
-  implements Operation<T>
+  implements Operation<T, T>
 {
   readonly name = 'append';
 
@@ -137,6 +164,11 @@ export class AppendFieldOperation<T extends Record<string, any>, K extends Array
 
   writes(): (keyof T)[] {
     return [this.key];
+  }
+
+  schemaExtensions(): Record<string, z.ZodTypeAny> {
+    // No new fields added
+    return {};
   }
 
   validate(state: T): void {
@@ -176,7 +208,7 @@ export class AppendFieldOperation<T extends Record<string, any>, K extends Array
  * Operation that extends an array field with multiple values
  */
 export class ExtendFieldOperation<T extends Record<string, any>, K extends ArrayKeys<T>>
-  implements Operation<T>
+  implements Operation<T, T>
 {
   readonly name = 'extend';
 
@@ -191,6 +223,11 @@ export class ExtendFieldOperation<T extends Record<string, any>, K extends Array
 
   writes(): (keyof T)[] {
     return [this.key];
+  }
+
+  schemaExtensions(): Record<string, z.ZodTypeAny> {
+    // No new fields added
+    return {};
   }
 
   validate(state: T): void {
@@ -231,7 +268,7 @@ export class ExtendFieldOperation<T extends Record<string, any>, K extends Array
  * Type-safe: only allows incrementing number fields
  */
 export class IncrementFieldOperation<T extends Record<string, any>, K extends NumberKeys<T>>
-  implements Operation<T>
+  implements Operation<T, T>
 {
   readonly name = 'increment';
 
@@ -246,6 +283,11 @@ export class IncrementFieldOperation<T extends Record<string, any>, K extends Nu
 
   writes(): (keyof T)[] {
     return [this.key];
+  }
+
+  schemaExtensions(): Record<string, z.ZodTypeAny> {
+    // No new fields added
+    return {};
   }
 
   validate(state: T): void {
@@ -328,29 +370,122 @@ OperationRegistry.register('increment', IncrementFieldOperation);
 // ============================================================================
 
 /**
- * Immutable state container for Burr applications.
+ * Immutable state container for Burr applications with optional read/write restrictions.
  *
  * State is the core data structure that flows through your application.
  * All mutations return new State instances, preserving immutability.
  *
+ * Requires a Zod schema for runtime validation. Optionally supports read/write
+ * restrictions for use in actions.
+ *
  * @example
  * ```typescript
- * interface ChatState {
- *   messages: string[];
- *   count: number;
- * }
+ * import { z } from 'zod';
  *
- * const state = new State<ChatState>({ messages: [], count: 0 });
- * const newState = state
- *   .append('messages', 'Hello!')
- *   .increment('count');
+ * const ChatStateSchema = z.object({
+ *   messages: z.array(z.string()),
+ *   count: z.number()
+ * });
+ *
+ * // Unrestricted state (default)
+ * const state = createState(ChatStateSchema, { messages: [], count: 0 });
+ * const newState = state.update({ count: 1 });
+ *
+ * // Restricted state (for actions)
+ * const restricted = State.forAction(
+ *   z.object({ messages: z.array(z.string()) }),  // reads
+ *   z.object({ count: z.number() }),              // writes
+ *   { messages: [] }
+ * );
  * ```
  */
-export class State<T extends Record<string, any>> {
-  private readonly _data: T;
+// State class with Proxy-based property access
+// The actual class merges with the readable data type via Proxy
+export type StateInstance<
+  TSchema extends z.ZodType<Record<string, any>>,
+  TReadableSchema extends z.ZodType<Record<string, any>> = TSchema,
+  TWritableSchema extends z.ZodType<Record<string, any>> = TSchema
+> = State<TSchema, TReadableSchema, TWritableSchema> & z.infer<TSchema>;
 
-  constructor(data: T) {
-    this._data = this.deepClone(data);
+export class State<
+  TSchema extends z.ZodType<Record<string, any>>,
+  TReadableSchema extends z.ZodType<Record<string, any>> = TSchema,
+  TWritableSchema extends z.ZodType<Record<string, any>> = TSchema
+> {
+  private readonly _data: z.infer<TSchema>;
+  private readonly _schema: TSchema;
+  private readonly _readableSchema: TReadableSchema;
+  private readonly _writableSchema: TWritableSchema;
+
+  /**
+   * Creates a new State instance with runtime validation and optional restrictions.
+   *
+   * @param schema - Zod schema for the full state data
+   * @param data - The initial state data
+   * @param options - Optional read/write restrictions
+   * @throws {z.ZodError} If the data doesn't match the schema
+   */
+  constructor(
+    schema: TSchema,
+    data: z.infer<TSchema>,
+    options?: {
+      readable?: TReadableSchema;
+      writable?: TWritableSchema;
+    }
+  ) {
+    this._schema = schema;
+    this._readableSchema = (options?.readable ?? schema) as TReadableSchema;
+    this._writableSchema = (options?.writable ?? schema) as TWritableSchema;
+
+    // Validate restrictions are subsets of main schema
+    if (options?.readable) {
+      this.validateSubset(schema, options.readable, 'readable');
+    }
+    if (options?.writable) {
+      this.validateSubset(schema, options.writable, 'writable');
+    }
+
+    // Validate and clone the data
+    const validatedData = this._schema.parse(data);
+    this._data = this.deepClone(validatedData);
+
+    // Return Proxy for direct property access
+    return new Proxy(this, {
+      get(target, prop) {
+        // If accessing a State method or private field, return it
+        if (prop in target) {
+          return target[prop as keyof typeof target];
+        }
+        // Otherwise, access data property (typed by TReadableSchema)
+        const data = target._data as Record<string, any>;
+        return data[prop as string];
+      },
+    }) as StateInstance<TSchema, TReadableSchema, TWritableSchema>;
+  }
+
+  /**
+   * Validates that a subset schema only contains keys present in the parent schema.
+   * Only validates ZodObject schemas (other types pass through).
+   */
+  private validateSubset(
+    parentSchema: z.ZodType,
+    subsetSchema: z.ZodType,
+    name: string
+  ): void {
+    // Only validate for ZodObject types
+    if (!(parentSchema instanceof z.ZodObject && subsetSchema instanceof z.ZodObject)) {
+      return;
+    }
+
+    const parentKeys = Object.keys(parentSchema.shape);
+    const subsetKeys = Object.keys(subsetSchema.shape);
+    const invalidKeys = subsetKeys.filter((k) => !parentKeys.includes(k));
+
+    if (invalidKeys.length > 0) {
+      throw new Error(
+        `${name} schema contains keys not in parent schema: ${invalidKeys.join(', ')}`
+      );
+    }
   }
 
   /**
@@ -361,10 +496,13 @@ export class State<T extends Record<string, any>> {
    * 1. Shallow copy entire state (cheap - just copies references)
    * 2. Deep clone ONLY fields that are read (structural sharing for others)
    * 3. Mutate in place
+   * 4. Validate against schema
    */
-  applyOperation(operation: Operation<T>): State<T> {
+  applyOperation<TOut extends Record<string, any>>(
+    operation: Operation<Record<string, any>, TOut>
+  ): StateInstance<z.ZodType<TOut>, TReadableSchema, TWritableSchema> {
     // Shallow copy - O(n) where n = number of keys, but just copying references
-    const newData = { ...this._data };
+    const newData = { ...this._data } as Record<string, any>;
 
     // Deep clone only the fields that will be read/modified
     // This enables structural sharing: unchanged fields still reference original objects
@@ -380,104 +518,219 @@ export class State<T extends Record<string, any>> {
     // Apply mutation in place (no additional copy!)
     operation.apply(newData);
 
-    // Return new state
-    return new State(newData);
+    // Extend schema if operation adds new fields
+    const extensions = operation.schemaExtensions();
+    const extendedSchema = 
+      this._schema instanceof z.ZodObject && Object.keys(extensions).length > 0
+        ? this._schema.extend(extensions)
+        : this._schema;
+
+    // Validate against extended schema after operation
+    const validatedData = extendedSchema.parse(newData);
+
+    // Return new State instance with extended schema
+    // Cast through unknown: runtime has correct schema, TypeScript can't verify alignment
+    return new State(extendedSchema, validatedData, {
+      readable: this._readableSchema,
+      writable: this._writableSchema,
+    }) as unknown as StateInstance<z.ZodType<TOut>, TReadableSchema, TWritableSchema>;
   }
 
   /**
-   * Updates state with new field values (upsert operation)
+   * Updates state with new field values (upsert operation).
+   * Dynamically extends the schema to include new fields, maintaining alignment
+   * between runtime schema and compile-time types.
+   * 
+   * Only allows updating fields defined in the writable schema.
    */
-  update(updates: Partial<T>): State<T> {
-    return this.applyOperation(new SetFieldsOperation(updates));
-  }
-
-  /**
-   * Appends a value to an array field (type-safe)
-   */
-  append<K extends ArrayKeys<T>>(key: K, value: ArrayElement<T[K]>): State<T> {
-    return this.applyOperation(new AppendFieldOperation(key, value));
-  }
-
-  /**
-   * Extends an array field with multiple values (type-safe)
-   */
-  extend<K extends ArrayKeys<T>>(key: K, values: ArrayElement<T[K]>[]): State<T> {
-    return this.applyOperation(new ExtendFieldOperation(key, values));
-  }
-
-  /**
-   * Increments a numeric field (type-safe)
-   */
-  increment<K extends NumberKeys<T>>(key: K, delta: number = 1): State<T> {
-    return this.applyOperation(new IncrementFieldOperation(key, delta));
-  }
-
-  /**
-   * Gets a field value from state
-   */
-  get<K extends keyof T>(key: K): T[K] {
-    if (!(key in this._data)) {
-      throw new Error(
-        `Key "${String(key)}" not found in state. Available keys: ${Object.keys(this._data).join(', ')}`
-      );
+  update<const TUpdates extends Partial<z.infer<TWritableSchema>>>(
+    updates: TUpdates
+  ): StateInstance<
+    TSchema extends z.ZodObject<infer TShape>
+      ? z.ZodObject<TShape & { [K in keyof TUpdates]: z.ZodType<TUpdates[K]> }>
+      : z.ZodType<z.infer<TSchema> & TUpdates>,
+    TReadableSchema,
+    TWritableSchema
+  > {
+    // Runtime validation: ensure updates match writable schema
+    if (this._writableSchema instanceof z.ZodObject) {
+      this._writableSchema.partial().parse(updates);
     }
-    return this._data[key];
+
+    // Extend the schema with new fields
+    let extendedSchema: any;
+    if (this._schema instanceof z.ZodObject) {
+      const extension: Record<string, z.ZodTypeAny> = {};
+      for (const key in updates) {
+        if (!(key in this._schema.shape)) {
+          extension[key] = z.unknown();
+        }
+      }
+      extendedSchema = Object.keys(extension).length > 0
+        ? this._schema.extend(extension)
+        : this._schema;
+    } else {
+      extendedSchema = this._schema;
+    }
+
+    // Create new data
+    const newData = { ...this._data, ...updates };
+
+    // Return new State with extended schema
+    return new State(extendedSchema, newData, {
+      readable: this._readableSchema,
+      writable: this._writableSchema,
+    }) as any;
   }
 
   /**
-   * Checks if a key exists in state
-   * Accepts any string key for runtime existence checks
+   * Appends values to one or more array fields (type-safe).
+   * Only allows appending to fields defined in the writable schema.
+   * 
+   * @example
+   * state.append({ items: newItem, tags: newTag })
    */
-  has(key: string): boolean {
-    return key in this._data;
+  append<TUpdates extends {
+    [K in ArrayKeys<z.infer<TWritableSchema>>]?: ArrayElement<z.infer<TWritableSchema>[K]>;
+  }>(
+    updates: TUpdates
+  ): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
+    let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
+    
+    for (const [key, value] of Object.entries(updates)) {
+      currentState = currentState.applyOperation<z.infer<TSchema>>(
+        new AppendFieldOperation<Record<string, any>, ArrayKeys<Record<string, any>>>(
+          key as ArrayKeys<Record<string, any>>,
+          value
+        )
+      ) as StateInstance<TSchema, TReadableSchema, TWritableSchema>;
+    }
+    
+    return currentState;
+  }
+
+  /**
+   * Extends one or more array fields with multiple values (type-safe).
+   * Only allows extending fields defined in the writable schema.
+   * 
+   * @example
+   * state.extend({ items: [item1, item2], tags: [tag1, tag2] })
+   */
+  extend<TUpdates extends {
+    [K in ArrayKeys<z.infer<TWritableSchema>>]?: ArrayElement<z.infer<TWritableSchema>[K]>[];
+  }>(
+    updates: TUpdates
+  ): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
+    let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
+    
+    for (const [key, values] of Object.entries(updates)) {
+      currentState = currentState.applyOperation<z.infer<TSchema>>(
+        new ExtendFieldOperation<Record<string, any>, ArrayKeys<Record<string, any>>>(
+          key as ArrayKeys<Record<string, any>>,
+          values as any[]
+        )
+      ) as StateInstance<TSchema, TReadableSchema, TWritableSchema>;
+    }
+    
+    return currentState;
+  }
+
+  /**
+   * Increments one or more numeric fields (type-safe).
+   * Only allows incrementing fields defined in the writable schema.
+   * 
+   * @example
+   * state.increment({ count: 1, score: 5 })
+   */
+  increment<TUpdates extends {
+    [K in NumberKeys<z.infer<TWritableSchema>>]?: number;
+  }>(
+    updates: TUpdates
+  ): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
+    let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
+    
+    for (const [key, delta] of Object.entries(updates)) {
+      currentState = currentState.applyOperation<z.infer<TSchema>>(
+        new IncrementFieldOperation<Record<string, any>, NumberKeys<Record<string, any>>>(
+          key as NumberKeys<Record<string, any>>,
+          delta as number
+        )
+      ) as StateInstance<TSchema, TReadableSchema, TWritableSchema>;
+    }
+    
+    return currentState;
   }
 
   /**
    * Returns all keys in state
    */
-  keys(): (keyof T)[] {
-    return Object.keys(this._data) as (keyof T)[];
+  keys(): string[] {
+    return Object.keys(this._data as Record<string, any>);
   }
 
   /**
-   * Returns a copy of all state data
+   * Returns the underlying data (for internal use by actions/application)
    */
-  getAll(): T {
-    return { ...this._data };
-  }
-
-  /**
-   * Returns a subset of state with only specified keys
-   */
-  subset(...keys: (keyof T)[]): State<T> {
-    const subsetData = {} as Partial<T>;
-    for (const key of keys) {
-      if (key in this._data) {
-        subsetData[key] = this._data[key];
-      }
-    }
-    return new State(subsetData as T);
+  get data(): z.infer<TSchema> {
+    return this._data;
   }
 
   /**
    * Merges another state into this one (other's values win on conflicts)
    */
-  merge(other: State<T>): State<T> {
-    return new State({ ...this._data, ...other._data });
+  merge(other: State<TSchema, any, any>): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
+    const mergedData = {
+      ...(this._data as Record<string, any>),
+      ...(other._data as Record<string, any>),
+    } as z.infer<TSchema>;
+    return new State(this._schema, mergedData, {
+      readable: this._readableSchema,
+      writable: this._writableSchema,
+    }) as StateInstance<TSchema, TReadableSchema, TWritableSchema>;
   }
 
   /**
    * Serializes state to JSON-compatible object
    */
-  serialize(): T {
+  serialize(): z.infer<TSchema> {
     return this._data;
   }
 
   /**
-   * Deserializes state from JSON-compatible object
+   * Deserializes state from JSON-compatible object with schema validation.
+   * This ensures that loaded state matches the expected schema.
+   *
+   * @param schema - Zod schema to validate against
+   * @param data - The serialized state data
+   * @throws {z.ZodError} If the data doesn't match the schema
    */
-  static deserialize<T extends Record<string, any>>(data: T): State<T> {
-    return new State(data);
+  static deserialize<TSchema extends z.ZodType<Record<string, any>>>(
+    schema: TSchema,
+    data: z.infer<TSchema>
+  ): StateInstance<TSchema, TSchema, TSchema> {
+    return new State(schema, data) as StateInstance<TSchema, TSchema, TSchema>;
+  }
+
+  /**
+   * Creates a restricted state for use in actions.
+   * The state can read from 'reads' schema and write to 'writes' schema.
+   *
+   * @param reads - Schema defining readable fields
+   * @param writes - Schema defining writable fields
+   * @param data - Initial data matching the reads schema
+   */
+  static forAction<
+    TReadsSchema extends z.ZodType<Record<string, any>>,
+    TWritesSchema extends z.ZodType<Record<string, any>>
+  >(
+    reads: TReadsSchema,
+    writes: TWritesSchema,
+    data: z.infer<TReadsSchema>
+  ): StateInstance<TReadsSchema, TReadsSchema, TWritesSchema> {
+    return new State(reads, data, {
+      readable: reads,
+      writable: writes,
+    }) as StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
   }
 
   /**
@@ -487,4 +740,30 @@ export class State<T extends Record<string, any>> {
   private deepClone<V>(value: V): V {
     return structuredClone(value);
   }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Helper function to create an unrestricted State with automatic type inference from schema.
+ * This provides better DX by inferring the type parameter from the schema.
+ *
+ * @example
+ * ```typescript
+ * const MyStateSchema = z.object({
+ *   count: z.number(),
+ *   name: z.string()
+ * });
+ *
+ * const state = createState(MyStateSchema, { count: 0, name: 'test' });
+ * // Can read and write all fields
+ * ```
+ */
+export function createState<TSchema extends z.ZodType<Record<string, any>>>(
+  schema: TSchema,
+  initialData: z.infer<TSchema>
+): StateInstance<TSchema, TSchema, TSchema> {
+  return new State(schema, initialData) as StateInstance<TSchema, TSchema, TSchema>;
 }

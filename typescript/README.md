@@ -52,3 +52,154 @@ See the main [Burr documentation](https://burr.apache.org/) for concepts and gui
 
 This implementation aims to match the Python version's core functionality with TypeScript idioms and best practices.
 
+## Feature Parity
+
+### State API
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| `State()` constructor | ✅ | ✅ | |
+| `state.get(key)` | ✅ | ✅ | TS throws on missing key; Python returns None |
+| `state.get(key, default)` | ✅ | ❌ | Python supports default values |
+| `state["key"]` access | ✅ | ❌ | Python dict syntax; TS uses `get()` |
+| `state.has(key)` / `key in state` | ✅ | ✅ | |
+| `state.keys()` | ✅ | ✅ | |
+| `state.getAll()` | ✅ | ✅ | |
+| `state.update(**kwargs)` | ✅ | ✅ | Python uses kwargs; TS uses object |
+| `state.append(key=val)` | ✅ | ✅ | Python: multiple keys; TS: single key |
+| `state.extend(key=vals)` | ✅ | ✅ | Python: multiple keys; TS: single key |
+| `state.increment(key=delta)` | ✅ | ✅ | Python: multiple keys; TS: single key |
+| `state.subset(*keys)` | ✅ | ✅ | |
+| `state.merge(other)` | ✅ | ✅ | |
+| `state.wipe(delete/keep)` | ✅ | ❌ | Delete operations not yet implemented |
+| `state.serialize()` | ✅ | ✅ | Basic JSON serialization |
+| `state.deserialize()` | ✅ | ✅ | Basic JSON deserialization |
+| Custom field serialization | ✅ | ❌ | `register_field_serde()` not implemented |
+| Typing system | ✅ | ❌ | Python has pluggable typing; TS uses generics |
+| Type safety | ❌ | ✅ | TS has compile-time type checking |
+
+### Actions
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| `@action` decorator | ✅ | ❌ | Not yet implemented |
+| `Action` class | ✅ | ❌ | Not yet implemented |
+| `reads` / `writes` specification | ✅ | ❌ | Not yet implemented |
+| Sync actions | ✅ | ❌ | TS will be async-only |
+| Async actions | ✅ | ❌ | TS design: async-only |
+| Streaming actions | ✅ | ❌ | Not yet implemented |
+| Action validation | ✅ | ❌ | Not yet implemented |
+| Conditional transitions | ✅ | ❌ | Not yet implemented |
+| `Result` type | ✅ | ❌ | Not yet implemented |
+
+### Application
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| `ApplicationBuilder` | ✅ | ❌ | Not yet implemented |
+| `Application.run()` | ✅ | ❌ | Not yet implemented |
+| `Application.step()` | ✅ | ❌ | Not yet implemented |
+| `Application.iterate()` | ✅ | ❌ | Not yet implemented |
+| `Application.arun()` (async) | ✅ | ❌ | TS will be async by default |
+| Initial state | ✅ | ❌ | Not yet implemented |
+| Entrypoint specification | ✅ | ❌ | Not yet implemented |
+| Halt conditions | ✅ | ❌ | Not yet implemented |
+| Application state access | ✅ | ❌ | Not yet implemented |
+| Application context | ✅ | ❌ | Not yet implemented |
+
+### Graph
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| `Graph` / `GraphBuilder` | ✅ | ❌ | Not yet implemented |
+| Transitions | ✅ | ❌ | Not yet implemented |
+| Conditional transitions | ✅ | ❌ | Not yet implemented |
+| Default transitions | ✅ | ❌ | Not yet implemented |
+| Graph validation | ✅ | ❌ | Not yet implemented |
+| Cycle detection | ✅ | ❌ | Not yet implemented |
+| Graph visualization | ✅ | ❌ | Not yet implemented |
+
+### Persistence
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| `Persister` interface | ✅ | ❌ | Not yet implemented |
+| In-memory persister | ✅ | ❌ | Not yet implemented |
+| File-based persister | ✅ | ❌ | Not yet implemented |
+| SQLite persister | ✅ | ❌ | Not yet implemented |
+| PostgreSQL persister | ✅ | ❌ | Not yet implemented |
+| Redis persister | ✅ | ❌ | Not yet implemented |
+| MongoDB persister | ✅ | ❌ | Not yet implemented |
+| Custom persisters | ✅ | ❌ | Not yet implemented |
+| State snapshots | ✅ | ❌ | Not yet implemented |
+| State history | ✅ | ❌ | Not yet implemented |
+
+### Lifecycle & Hooks
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| Lifecycle hooks interface | ✅ | ❌ | Not yet implemented |
+| Pre-run hooks | ✅ | ❌ | Not yet implemented |
+| Post-run hooks | ✅ | ❌ | Not yet implemented |
+| Pre-action hooks | ✅ | ❌ | Not yet implemented |
+| Post-action hooks | ✅ | ❌ | Not yet implemented |
+| Error hooks | ✅ | ❌ | Not yet implemented |
+| Multiple hooks composition | ✅ | ❌ | Not yet implemented |
+
+### Tracking & Observability
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| Tracking client | ✅ | ❌ | Not yet implemented |
+| Local tracking | ✅ | ❌ | Not yet implemented |
+| Remote tracking | ✅ | ❌ | Not yet implemented |
+| S3 tracking | ✅ | ❌ | Not yet implemented |
+| Tracing/spans | ✅ | ❌ | Not yet implemented |
+| OpenTelemetry integration | ✅ | ❌ | Not yet implemented |
+
+### Integrations
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| Hamilton integration | ✅ | ❌ | Not yet implemented |
+| LangChain integration | ✅ | ❌ | Not yet implemented |
+| Haystack integration | ✅ | ❌ | Not yet implemented |
+| Pydantic integration | ✅ | ❌ | Not yet implemented |
+| Streamlit integration | ✅ | ❌ | Not yet implemented |
+| Ray integration | ✅ | ❌ | Not yet implemented |
+| Custom integrations | ✅ | ❌ | Not yet implemented |
+
+### Core Abstractions
+
+| Feature | Python | TypeScript | Notes |
+|---------|--------|------------|-------|
+| Operation/StateDelta pattern | ✅ | ✅ | Implemented for state mutations |
+| Immutable state | ✅ | ✅ | |
+| Copy-on-write optimization | ✅ | ✅ | Uses `structuredClone` |
+| Generic type support | ❌ | ✅ | TypeScript generics provide type safety |
+| Serializable operations | ✅ | ✅ | Operations can be serialized to JSON |
+| Async-first design | ❌ | 🚧 | TS will be async-only (planned) |
+
+### Legend
+- ✅ **Implemented** - Feature is available and tested
+- 🚧 **Partial** - Feature is partially implemented or in progress
+- ❌ **Not Implemented** - Feature not yet available
+
+### Implementation Priority
+
+**Phase 1 (Current):**
+- ✅ State API core operations
+- ✅ State immutability & operations
+- ✅ Basic serialization
+
+**Phase 2 (Next):**
+- Actions & action decorators
+- Application & ApplicationBuilder
+- Graph & transitions
+
+**Phase 3 (Future):**
+- Lifecycle hooks
+- Persistence
+- Tracking & observability
+- Integrations
+

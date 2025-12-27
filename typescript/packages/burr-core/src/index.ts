@@ -19,3 +19,26 @@
 
 // Public API exports for @apache-burr/core
 
+// Re-export zod for convenience
+export { z } from 'zod';
+
+// State management
+export {
+  State,
+  type StateInstance,
+  createState,
+  type Operation,
+  type OperationConstructor,
+  SetFieldsOperation,
+  AppendFieldOperation,
+  ExtendFieldOperation,
+  IncrementFieldOperation,
+  OperationRegistry,
+  type NumberKeys,
+  type ArrayKeys,
+  type ArrayElement,
+} from './state';
+
+// Actions
+export { Action, defineAction } from './action';
+
