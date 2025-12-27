@@ -285,16 +285,53 @@ export class Action<
  * const incrementAction = defineAction({
  *   reads: z.object({ count: z.number() }),
  *   writes: z.object({ count: z.number() }),
- *   // run omitted - defaults to () => ({})
+ *   // No result specified, run defaults to () => ({})
  *   update: ({ state }) => state.update({ count: state.count + 1 })
  * });
  * ```
  */
+
+// Overload 1: When result is specified, run is required
+export function defineAction<
+  TReadsSchema extends z.ZodType<Record<string, any>>,
+  TWritesSchema extends z.ZodType<Record<string, any>>,
+  TInputsSchema extends z.ZodType,
+  TResultSchema extends z.ZodObject<any> | z.ZodVoid
+>(config: {
+  reads: TReadsSchema;
+  writes: TWritesSchema;
+  inputs?: TInputsSchema;
+  result: TResultSchema;
+  run: (params: {
+    state: StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
+    inputs: z.infer<TInputsSchema>;
+  }) => Promise<z.infer<TResultSchema>>;
+  update: UpdateFunction<TReadsSchema, TWritesSchema, TInputsSchema, TResultSchema>;
+}): Action<TReadsSchema, TWritesSchema, TInputsSchema, TResultSchema>;
+
+// Overload 2: When result is NOT specified, run is optional (defaults to empty object)
+export function defineAction<
+  TReadsSchema extends z.ZodType<Record<string, any>>,
+  TWritesSchema extends z.ZodType<Record<string, any>>,
+  TInputsSchema extends z.ZodType = z.ZodVoid
+>(config: {
+  reads: TReadsSchema;
+  writes: TWritesSchema;
+  inputs?: TInputsSchema;
+  result?: never;
+  run?: (params: {
+    state: StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
+    inputs: z.infer<TInputsSchema>;
+  }) => Promise<Record<string, never>>;
+  update: UpdateFunction<TReadsSchema, TWritesSchema, TInputsSchema, z.ZodObject<{}>>;
+}): Action<TReadsSchema, TWritesSchema, TInputsSchema, z.ZodObject<{}>>;
+
+// Implementation
 export function defineAction<
   TReadsSchema extends z.ZodType<Record<string, any>>,
   TWritesSchema extends z.ZodType<Record<string, any>>,
   TInputsSchema extends z.ZodType = z.ZodVoid,
-  TResultSchema extends z.ZodObject<any> | z.ZodVoid = z.ZodVoid
+  TResultSchema extends z.ZodObject<any> | z.ZodVoid = z.ZodObject<{}>
 >(config: {
   reads: TReadsSchema;
   writes: TWritesSchema;

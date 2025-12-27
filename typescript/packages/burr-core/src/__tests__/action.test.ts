@@ -66,7 +66,7 @@ describe('Action - Construction', () => {
       }),
       run: async ({ state: _state }) => {
         // Simulate side effect (e.g., send notification)
-        return undefined;
+        return {};
       },
       update: ({ state }) => state.update({
         lastRun: new Date().toISOString()
@@ -90,7 +90,7 @@ describe('Action - Construction', () => {
       inputs: z.object({
         multiplier: z.number()
       }),
-      run: async ({ state: _state, inputs: _inputs }) => undefined,
+      run: async ({ state: _state, inputs: _inputs }) => ({}),
       update: ({ state }) => state.update({
         doubled: state.value * 2
       })
@@ -432,7 +432,8 @@ describe('Action - Execution (update)', () => {
       run: async ({ state }) => ({ value: state.x * 2 }),
       update: ({ state }) => {
         // Return wrong shape - update with wrong key
-        return state.update({ wrongKey: 123 } as any) as any;
+        // @ts-expect-error - intentionally bypassing type safety for test
+        return state.update({ wrongKey: 123 }) as any;
       }
     });
 
@@ -619,31 +620,44 @@ describe('Action - Type Safety with Zod', () => {
   });
 });
 
-describe('Action - Playground / Template', () => {
-  test('template action for experimentation', async () => {
-    // Test 1: Write restrictions now work! TypeScript catches invalid writes at definition time.
-    // This SHOULD error because 'count' is not in writes schema
-    // @ts-expect-error - unused variable for demonstration
-    const _actionNoAnnotation = defineAction({
-      reads: z.object({count: z.number()}),
-      writes: z.object({count: z.number(), requiredButNotAdded: z.number()}),
-      result: z.object({newCount: z.number()}),
-      run: async ({ state }) => ({ newCount: state.count + 1 }),
-      update: ({ state, result }) => state.increment({ count: result.newCount }).update({requiredButNotAdded: state.count})
-    });
+// describe('Action - Playground / Template', () => {
+//   test('template action for experimentation', async () => {
+//     // Test 1: Write restrictions now work! TypeScript catches invalid writes at definition time.
+//     // This SHOULD error because 'count' is not in writes schema
+//     // @ts-expect-error - unused variable for demonstration
+//     const actionDemoErrors = defineAction({
+//       reads: z.object({count: z.number(), wrongType: z.string()}),
+//       writes: z.object({count: z.number(), requiredButNotAdded: z.number(), wrongType: z.string()},),
+//       update: ({ state }) => state
+//         // @ts-expect-error - wrongType is a string field, not a number (demonstrates type checking)
+//         .increment({wrongType: "string" , count: 1})
+//         // @ts-expect-error - notDeclaredWrite is not in writes schema (demonstrates excess property checking)
+//         .update({requiredButNotAdded: state.count, notDeclaredWrite: "string"})
+//     });
 
-    // Test 2: With explicit return type - SHOULD ERROR!
-    // const writesSchema = z.object({count: z.number(), requiredButNotAdded: z.number()});
-    // const actionWithAnnotation = defineAction({
-    //   reads: z.object({count: z.number()}),
-    //   writes: writesSchema,
-    //   update: ({ state }): StateInstance<typeof writesSchema, any, any> => {
-    //     return state.increment({ count: 1 });  // Should error here!
-    //   }
-    // });
+//     // @ts-expect-error - unused for demonstration
+//     const actionMissingRunImplementation = defineAction({
+//       reads: z.object({count: z.number()}),
+//       writes: z.object({count: z.number()}),
+//       result: z.object({incrementBy: z.number()}),
+//       // @ts-expect-error - wrong type: "hello" is not a number (demonstrates result type checking)
+//       run: async ({ }) => ({ incrementBy: "hello" }),
+//       update: ({ state, result }) => state
+//         .increment({ count: result.incrementBy})
+//     });
+
+//     // Test 2: With explicit return type - SHOULD ERROR!
+//     // const writesSchema = z.object({count: z.number(), requiredButNotAdded: z.number()});
+//     // const actionWithAnnotation = defineAction({
+//     //   reads: z.object({count: z.number()}),
+//     //   writes: writesSchema,
+//     //   update: ({ state }): StateInstance<typeof writesSchema, any, any> => {
+//     //     return state.increment({ count: 1 });  // Should error here!
+//     //   }
+//     // });
     
-    // expect(actionNoAnnotation).toBeDefined();
-    // expect(actionWithAnnotation).toBeDefined();
-  });
-});
+//     // expect(actionNoAnnotation).toBeDefined();
+//     // expect(actionWithAnnotation).toBeDefined();
+//   });
+// });
 

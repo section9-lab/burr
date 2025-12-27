@@ -366,6 +366,20 @@ OperationRegistry.register('extend', ExtendFieldOperation);
 OperationRegistry.register('increment', IncrementFieldOperation);
 
 // ============================================================================
+// Helper Types
+// ============================================================================
+
+/**
+ * Ensures exact keys - rejects objects with excess properties.
+ * Maps excess properties to error messages for clear diagnostics.
+ */
+type NoExcessProperties<Allowed, Actual> = {
+  [K in keyof Actual]: K extends keyof Allowed
+    ? Actual[K]
+    : `❌ ERROR: Property '${K & string}' is not in writes schema. Remove it or add to writes.`;
+};
+
+// ============================================================================
 // State Class
 // ============================================================================
 
@@ -542,9 +556,10 @@ export class State<
    * between runtime schema and compile-time types.
    * 
    * Only allows updating fields defined in the writable schema.
+   * Excess properties are rejected at compile-time.
    */
   update<const TUpdates extends Partial<z.infer<TWritableSchema>>>(
-    updates: TUpdates
+    updates: NoExcessProperties<Partial<z.infer<TWritableSchema>>, TUpdates>
   ): StateInstance<
     TSchema extends z.ZodObject<infer TShape>
       ? z.ZodObject<TShape & { [K in keyof TUpdates]: z.ZodType<TUpdates[K]> }>
@@ -586,6 +601,7 @@ export class State<
   /**
    * Appends values to one or more array fields (type-safe).
    * Only allows appending to fields defined in the writable schema.
+   * Excess properties are rejected at compile-time.
    * 
    * @example
    * state.append({ items: newItem, tags: newTag })
@@ -593,7 +609,10 @@ export class State<
   append<TUpdates extends {
     [K in ArrayKeys<z.infer<TWritableSchema>>]?: ArrayElement<z.infer<TWritableSchema>[K]>;
   }>(
-    updates: TUpdates
+    updates: NoExcessProperties<
+      { [K in ArrayKeys<z.infer<TWritableSchema>>]?: ArrayElement<z.infer<TWritableSchema>[K]> },
+      TUpdates
+    >
   ): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
     let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
     
@@ -612,6 +631,7 @@ export class State<
   /**
    * Extends one or more array fields with multiple values (type-safe).
    * Only allows extending fields defined in the writable schema.
+   * Excess properties are rejected at compile-time.
    * 
    * @example
    * state.extend({ items: [item1, item2], tags: [tag1, tag2] })
@@ -619,7 +639,10 @@ export class State<
   extend<TUpdates extends {
     [K in ArrayKeys<z.infer<TWritableSchema>>]?: ArrayElement<z.infer<TWritableSchema>[K]>[];
   }>(
-    updates: TUpdates
+    updates: NoExcessProperties<
+      { [K in ArrayKeys<z.infer<TWritableSchema>>]?: ArrayElement<z.infer<TWritableSchema>[K]>[] },
+      TUpdates
+    >
   ): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
     let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
     
@@ -638,6 +661,7 @@ export class State<
   /**
    * Increments one or more numeric fields (type-safe).
    * Only allows incrementing fields defined in the writable schema.
+   * Excess properties are rejected at compile-time.
    * 
    * @example
    * state.increment({ count: 1, score: 5 })
@@ -645,7 +669,10 @@ export class State<
   increment<TUpdates extends {
     [K in NumberKeys<z.infer<TWritableSchema>>]?: number;
   }>(
-    updates: TUpdates
+    updates: NoExcessProperties<
+      { [K in NumberKeys<z.infer<TWritableSchema>>]?: number },
+      TUpdates
+    >
   ): StateInstance<TSchema, TReadableSchema, TWritableSchema> {
     let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
     
