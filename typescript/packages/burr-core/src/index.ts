@@ -42,3 +42,10 @@ export {
 // Actions
 export { Action, defineAction } from './action';
 
+// Graph
+export { Graph, GraphBuilder, type Transition } from './graph';
+
+// Application
+export { Application } from './application';
+export { ApplicationBuilder } from './application-builder';
+
