@@ -18,29 +18,11 @@
  */
 
 import { z } from 'zod';
+import { NumberKeys, ArrayKeys, ArrayElement, NoExcessProperties } from './type-utils';
+import { extendSchemaWithFields } from './schema-utils';
 
-// ============================================================================
-// Type Utilities for Type-Safe State Operations
-// ============================================================================
-
-/**
- * Extracts keys from T that have number values
- */
-export type NumberKeys<T> = {
-  [K in keyof T]: T[K] extends number ? K : never;
-}[keyof T];
-
-/**
- * Extracts keys from T that have array values
- */
-export type ArrayKeys<T> = {
-  [K in keyof T]: T[K] extends Array<any> ? K : never;
-}[keyof T];
-
-/**
- * Extracts the element type from an array type
- */
-export type ArrayElement<T> = T extends Array<infer U> ? U : never;
+// Re-export type utilities for backwards compatibility
+export type { NumberKeys, ArrayKeys, ArrayElement };
 
 // ============================================================================
 // Operation Interface
@@ -369,17 +351,6 @@ OperationRegistry.register('increment', IncrementFieldOperation);
 // Helper Types
 // ============================================================================
 
-/**
- * Ensures exact keys - rejects objects with excess properties.
- * Maps excess properties to error messages for clear diagnostics.
- */
-type NoExcessProperties<Allowed, Actual> = {
-  [K in keyof Actual]: K extends keyof Allowed
-    ? Actual[K]
-    : `❌ ERROR: Property '${K & string}' is not in writes schema. Remove it or add to writes.`;
-};
-
-
 // ============================================================================
 // State Class
 // ============================================================================
@@ -589,37 +560,14 @@ export class State<
       this._writableSchema.partial().parse(updates);
     }
 
-    // Extend the data schema with new fields
-    let extendedSchema: any;
-    if (this._schema instanceof z.ZodObject) {
-      const extension: Record<string, z.ZodTypeAny> = {};
-      for (const key in updates) {
-        if (!(key in this._schema.shape)) {
-          extension[key] = z.unknown();
-        }
-      }
-      extendedSchema = Object.keys(extension).length > 0
-        ? this._schema.extend(extension)
-        : this._schema;
-    } else {
-      extendedSchema = this._schema;
-    }
-
-    // Extend the readable schema with updated fields (you can read what you wrote)
-    let extendedReadableSchema: any;
-    if (this._readableSchema instanceof z.ZodObject) {
-      const readExtension: Record<string, z.ZodTypeAny> = {};
-      for (const key in updates) {
-        if (!(key in this._readableSchema.shape)) {
-          readExtension[key] = z.unknown();
-        }
-      }
-      extendedReadableSchema = Object.keys(readExtension).length > 0
-        ? this._readableSchema.extend(readExtension)
-        : this._readableSchema;
-    } else {
-      extendedReadableSchema = this._readableSchema;
-    }
+    // Extend schemas with new fields (you can read what you wrote)
+    const extendedSchema: any = this._schema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._schema, updates)
+      : this._schema;
+    
+    const extendedReadableSchema: any = this._readableSchema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._readableSchema, updates)
+      : this._readableSchema;
 
     // Create new data
     const newData = { ...this._data, ...updates };
@@ -666,20 +614,9 @@ export class State<
     }
     
     // Extend readable schema with appended fields
-    let extendedReadableSchema: any;
-    if (this._readableSchema instanceof z.ZodObject) {
-      const readExtension: Record<string, z.ZodTypeAny> = {};
-      for (const key in updates) {
-        if (!(key in this._readableSchema.shape)) {
-          readExtension[key] = z.unknown();
-        }
-      }
-      extendedReadableSchema = Object.keys(readExtension).length > 0
-        ? this._readableSchema.extend(readExtension)
-        : this._readableSchema;
-    } else {
-      extendedReadableSchema = this._readableSchema;
-    }
+    const extendedReadableSchema: any = this._readableSchema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._readableSchema, updates)
+      : this._readableSchema;
     
     return new State(currentState._schema, currentState._data, {
       readable: extendedReadableSchema,
@@ -722,20 +659,9 @@ export class State<
     }
     
     // Extend readable schema with modified fields
-    let extendedReadableSchema: any;
-    if (this._readableSchema instanceof z.ZodObject) {
-      const readExtension: Record<string, z.ZodTypeAny> = {};
-      for (const key in updates) {
-        if (!(key in this._readableSchema.shape)) {
-          readExtension[key] = z.unknown();
-        }
-      }
-      extendedReadableSchema = Object.keys(readExtension).length > 0
-        ? this._readableSchema.extend(readExtension)
-        : this._readableSchema;
-    } else {
-      extendedReadableSchema = this._readableSchema;
-    }
+    const extendedReadableSchema: any = this._readableSchema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._readableSchema, updates)
+      : this._readableSchema;
     
     return new State(currentState._schema, currentState._data, {
       readable: extendedReadableSchema,
@@ -778,20 +704,9 @@ export class State<
     }
     
     // Extend readable schema with incremented fields
-    let extendedReadableSchema: any;
-    if (this._readableSchema instanceof z.ZodObject) {
-      const readExtension: Record<string, z.ZodTypeAny> = {};
-      for (const key in updates) {
-        if (!(key in this._readableSchema.shape)) {
-          readExtension[key] = z.unknown();
-        }
-      }
-      extendedReadableSchema = Object.keys(readExtension).length > 0
-        ? this._readableSchema.extend(readExtension)
-        : this._readableSchema;
-    } else {
-      extendedReadableSchema = this._readableSchema;
-    }
+    const extendedReadableSchema: any = this._readableSchema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._readableSchema, updates)
+      : this._readableSchema;
     
     return new State(currentState._schema, currentState._data, {
       readable: extendedReadableSchema,

@@ -21,28 +21,17 @@
 
 import { z } from 'zod';
 import { Action } from './action';
+import { FixEmptySchema, MergeRecordValues } from './type-utils';
 
 // ============================================================================
 // Type Utilities
 // ============================================================================
 
 /**
- * Replaces Record<string, never> with {} to avoid type pollution.
- * Zod's z.object({}) infers to Record<string, never>, which breaks
- * extends checks in complex generic chains.
- */
-type FixEmptySchema<T> = T extends Record<string, never> ? {} : T;
-
-/**
  * Merges all state fields from actions into a single type.
  * 
- * NOTE: TypeScript naming is backwards from set theory!
- * - TS `&` (intersection) = merge fields (like set union)
- * - TS `|` (union) = either/or (like set disjunction)
- * 
- * The mapped type produces a union: Action1State | Action2State | ...
- * We convert to intersection: Action1State & Action2State & ...
- * This merges all fields that any action needs.
+ * Uses the common pattern: map actions to their state requirements,
+ * then merge all those requirements into a single type.
  * 
  * Example:
  * - Action1: {} & {a} = {a}
@@ -50,16 +39,12 @@ type FixEmptySchema<T> = T extends Record<string, never> ? {} : T;
  * - Result: {a} & {a,b} = {a,b}
  */
 type MergeActionStates<TActions extends Record<string, Action<any, any, any, any>>> = 
-  // Convert union → intersection using distributive conditional type trick
-  ({
+  MergeRecordValues<{
     [K in keyof TActions]: 
       TActions[K] extends Action<infer R, infer W, any, any>
         ? FixEmptySchema<z.infer<R>> & FixEmptySchema<z.infer<W>>
         : never
-  }[keyof TActions] extends infer U
-    ? (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never
-    : never
-  );
+  }>;
 
 /**
  * Infers the state type based on builder mode:
