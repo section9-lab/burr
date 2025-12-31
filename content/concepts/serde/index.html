@@ -15,10 +15,10 @@
     <link rel="index" title="Index" href="../../genindex/"><link rel="search" title="Search" href="../../search/"><link rel="next" title="Streaming Actions" href="../streaming-actions/"><link rel="prev" title="State Persistence" href="../state-persistence/">
         <link rel="canonical" href="https://burr.apache.org/concepts/serde/">
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"><!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"><!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
         <title>Serialization / Deserialization - Apache Burr</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2c829df3" />
@@ -465,6 +465,12 @@ type based serialization/deserialization mechanism.</p>
 </div></blockquote>
 </section>
 </section>
+<section id="limitations-of-state-serialization">
+<h2>Limitations of State Serialization<a class="headerlink" href="#limitations-of-state-serialization" title="Link to this heading">¶</a></h2>
+<p>Currently, it is only possible to override the serialization and deserialization behavior of individual fields within a state.
+Overriding the serialization of the entire state object as a whole is not supported at this time.
+If you need custom handling, you must apply it at the field level.</p>
+</section>
 </section>
 
         </article>
@@ -542,6 +548,7 @@ type based serialization/deserialization mechanism.</p>
 <li><a class="reference internal" href="#field-level-serialization-deserialization">Field level Serialization/Deserialization</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#limitations-of-state-serialization">Limitations of State Serialization</a></li>
 </ul>
 </li>
 </ul>
