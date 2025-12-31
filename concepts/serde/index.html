@@ -465,6 +465,12 @@ type based serialization/deserialization mechanism.</p>
 </div></blockquote>
 </section>
 </section>
+<section id="limitations-of-state-serialization">
+<h2>Limitations of State Serialization<a class="headerlink" href="#limitations-of-state-serialization" title="Link to this heading">¶</a></h2>
+<p>Currently, it is only possible to override the serialization and deserialization behavior of individual fields within a state.
+Overriding the serialization of the entire state object as a whole is not supported at this time.
+If you need custom handling, you must apply it at the field level.</p>
+</section>
 </section>
 
         </article>
@@ -542,6 +548,7 @@ type based serialization/deserialization mechanism.</p>
 <li><a class="reference internal" href="#field-level-serialization-deserialization">Field level Serialization/Deserialization</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#limitations-of-state-serialization">Limitations of State Serialization</a></li>
 </ul>
 </li>
 </ul>
