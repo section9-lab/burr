@@ -30,6 +30,8 @@
  * @module type-utils
  */
 
+import { z } from 'zod';
+
 // ============================================================================
 // Schema Transformations
 // ============================================================================
@@ -250,4 +252,98 @@ export type ChooseType<
   IfTrue,
   IfFalse
 > = Condition extends Target ? IfTrue : IfFalse;
+
+// ============================================================================
+// Builder Pattern Utilities
+// ============================================================================
+
+/**
+ * If `Existing` is not set (ZodNever), use `New`. Otherwise, keep `Existing`.
+ * 
+ * This is the core pattern for builder methods that can be called in any order.
+ * Useful for tracking which value was set first when multiple optional parameters exist.
+ * 
+ * @example
+ * ```typescript
+ * // First call: Existing = ZodNever, so use New
+ * type AfterFirst = UseIfNotSet<z.ZodNever, NewSchema>; // => NewSchema
+ * 
+ * // Second call: Existing = NewSchema, so keep it
+ * type AfterSecond = UseIfNotSet<NewSchema, AnotherSchema>; // => NewSchema
+ * ```
+ */
+export type UseIfNotSet<
+  Existing extends z.ZodType,
+  New extends z.ZodType
+> = [Existing] extends [z.ZodNever] ? New : Existing;
+
+/**
+ * Ensures a Zod schema satisfies the Record constraint.
+ * If it's ZodNever (not set), converts to a default Record schema.
+ * 
+ * Used when building final types where we need to guarantee the constraint is satisfied.
+ * 
+ * @example
+ * ```typescript
+ * type Safe = EnsureRecordSchema<z.ZodNever>; // => z.ZodType<Record<string, any>>
+ * type Safe2 = EnsureRecordSchema<z.object({ a: z.number() })>; // => z.object({ a: z.number() })
+ * ```
+ */
+export type EnsureRecordSchema<T extends z.ZodType> = 
+  T extends z.ZodNever 
+    ? z.ZodType<Record<string, any>>
+    : T extends z.ZodType<Record<string, any>>
+      ? T
+      : z.ZodType<Record<string, any>>;
+
+/**
+ * Validates that a new schema's inferred type extends an existing schema's inferred type.
+ * Returns an error type if validation fails.
+ * 
+ * Used for compile-time validation in builder methods where one schema must be a superset of another.
+ * 
+ * @example
+ * ```typescript
+ * type Valid = ValidateSchemaExtends<
+ *   z.object({ a: z.number(), b: z.string() }),
+ *   z.object({ a: z.number() })
+ * >; // => Valid (superset extends subset)
+ * 
+ * type Invalid = ValidateSchemaExtends<
+ *   z.object({ a: z.number() }),
+ *   z.object({ a: z.number(), b: z.string() })
+ * >; // => Error type
+ * ```
+ */
+export type ValidateSchemaExtends<
+  TNew extends z.ZodType,
+  TExisting extends z.ZodType,
+  ErrorMsg extends string = '❌ Schema constraint violation'
+> = z.infer<TNew> extends z.infer<TExisting>
+  ? TNew
+  : { [K in ErrorMsg]: z.infer<TExisting> };
+
+/**
+ * Conditional validation: if `TExisting` is not set, allow `TNew`.
+ * Otherwise, validate that `TNew` extends `TExisting`.
+ * 
+ * Useful for builder patterns where validation should only occur if a constraint has been set.
+ * 
+ * @example
+ * ```typescript
+ * // Constraint not set yet - allow any value
+ * type Allowed1 = ConditionalValidate<NewSchema, z.ZodNever>; // => NewSchema
+ * 
+ * // Constraint is set - validate compatibility
+ * type Allowed2 = ConditionalValidate<NewSchema, ExistingSchema>; // => NewSchema if compatible, Error if not
+ * ```
+ */
+export type ConditionalValidate<
+  TNew extends z.ZodType,
+  TExisting extends z.ZodType,
+  ErrorMsg extends string = '❌ Schema constraint violation'
+> = [TExisting] extends [z.ZodNever]
+  ? TNew
+  : ValidateSchemaExtends<TNew, TExisting, ErrorMsg>;
+
 

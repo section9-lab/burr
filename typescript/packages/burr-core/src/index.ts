@@ -47,6 +47,11 @@ export { Action, action as action } from './action';
 export { Graph, GraphBuilder, type Transition } from './graph';
 
 // Application
-export { Application } from './application';
+export { 
+  Application,
+  type StepResult,
+  type RunResult,
+  type ExecutionOptions
+} from './application';
 export { ApplicationBuilder } from './application-builder';
 

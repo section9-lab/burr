@@ -23,33 +23,64 @@ import { z } from 'zod';
 import { Graph } from './graph';
 import { StateInstance } from './state';
 import { Application } from './application';
+import {
+  UseIfNotSet,
+  EnsureRecordSchema,
+  ConditionalValidate
+} from './type-utils';
+
+/**
+ * Selects final schema: if app schema not set, use graph schema; otherwise use app schema.
+ * Domain-specific utility for ApplicationBuilder.build() method.
+ */
+type SelectFinalSchema<
+  TAppSchema extends z.ZodType,
+  TGraphSchema extends z.ZodType
+> = [TAppSchema] extends [z.ZodNever]
+  ? [TGraphSchema] extends [z.ZodNever]
+    ? z.ZodNever
+    : TGraphSchema
+  : TAppSchema;
+
+/**
+ * Validates schema compatibility and returns either SuccessType or error type.
+ * Avoids duplication of ConditionalValidate calls in method signatures.
+ */
+type ValidatedOrError<
+  TNew extends z.ZodType,
+  TExisting extends z.ZodType,
+  SuccessType,
+  ErrorMsg extends string = '❌ Schema constraint violation'
+> = ConditionalValidate<TNew, TExisting, ErrorMsg> extends z.ZodType
+  ? SuccessType
+  : ConditionalValidate<TNew, TExisting, ErrorMsg>;
 
 /**
  * Immutable builder for constructing applications.
  * Each method returns a new builder instance.
  * 
  * Separates concerns:
- * - Graph defines structure (actions + transitions) and computes required state type
+ * - Graph defines structure (actions + transitions) and computes required state schema
  * - ApplicationBuilder defines runtime (entrypoint + initial state) and validates state
  * 
  * Type safety:
- * - TAppState: The application's state type (from explicit generic or withState)
- * - TGraphState: The graph's required state type (computed from actions)
- * - Validation: TAppState must extend TGraphState (application state is superset of graph requirements)
+ * - TAppStateSchema: The application's state schema (from explicit generic or withState)
+ * - TGraphStateSchema: The graph's required state schema (computed from actions)
+ * - Validation: TAppStateSchema must extend TGraphStateSchema (application state is superset of graph requirements)
  * 
- * @template TAppState - Application state type (defaults to never for inference)
- * @template TGraphState - Graph's required state type (internal, set by withGraph)
+ * @template TAppStateSchema - Application state schema type (defaults to never for inference)
+ * @template TGraphStateSchema - Graph's required state schema type (internal, set by withGraph)
  */
 export class ApplicationBuilder<
-  TAppState = never,
-  TGraphState = never
+  TAppStateSchema extends z.ZodType = z.ZodNever,
+  TGraphStateSchema extends z.ZodType = z.ZodNever
 > {
-  private readonly _graph: Graph<any> | null;
+  private readonly _graph: Graph<TGraphStateSchema> | null;
   private readonly _entrypoint: string | null;
   private readonly _initialState: StateInstance<any, any, any> | null;
 
   constructor(
-    graph: Graph<any> | null = null,
+    graph: Graph<TGraphStateSchema> | null = null,
     entrypoint: string | null = null,
     initialState: StateInstance<any, any, any> | null = null
   ) {
@@ -60,10 +91,10 @@ export class ApplicationBuilder<
 
   /**
    * Set the graph for this application.
-   * The graph defines the structure (actions and transitions) and required state type.
+   * The graph defines the structure (actions and transitions) and required state schema.
    * 
-   * When TAppState is not set (never), infers from graph.
-   * Otherwise, validates at compile-time that TAppState extends TNewGraphState.
+   * When TAppStateSchema is not set (never), infers from graph.
+   * Otherwise, validates at compile-time that TAppStateSchema's inferred type extends TNewGraphStateSchema's inferred type.
    * 
    * @param graph - Graph built with GraphBuilder
    * @returns New ApplicationBuilder instance with graph set
@@ -78,15 +109,16 @@ export class ApplicationBuilder<
    *   .build();
    * ```
    */
-  withGraph<TNewGraphState>(
-    graph: [TAppState] extends [never]
-      ? Graph<TNewGraphState>
-      : TAppState extends TNewGraphState
-        ? Graph<TNewGraphState>
-        : { '❌ State schema must extend graph requirements': TNewGraphState }
+  withGraph<TNewGraphStateSchema extends z.ZodType<Record<string, any>>>(
+    graph: ValidatedOrError<
+      TAppStateSchema,
+      TNewGraphStateSchema,
+      Graph<TNewGraphStateSchema>,
+      '❌ State schema must extend graph requirements'
+    >
   ): ApplicationBuilder<
-    [TAppState] extends [never] ? TNewGraphState : TAppState,
-    TNewGraphState
+    UseIfNotSet<TAppStateSchema, TNewGraphStateSchema>,
+    TNewGraphStateSchema
   > {
     if (this._graph !== null) {
       throw new Error(
@@ -94,11 +126,16 @@ export class ApplicationBuilder<
       );
     }
 
+    // Type guard to ensure graph is actually a Graph, not an error type
+    if (!('actions' in graph)) {
+      throw new Error('Invalid graph provided');
+    }
+
     return new ApplicationBuilder<
-      [TAppState] extends [never] ? TNewGraphState : TAppState,
-      TNewGraphState
+      UseIfNotSet<TAppStateSchema, TNewGraphStateSchema>,
+      TNewGraphStateSchema
     >(
-      graph as any,
+      graph as Graph<TNewGraphStateSchema>,
       this._entrypoint,
       this._initialState
     );
@@ -117,7 +154,7 @@ export class ApplicationBuilder<
    * builder.withEntrypoint('myStartAction')
    * ```
    */
-  withEntrypoint(actionName: string): ApplicationBuilder<TAppState, TGraphState> {
+  withEntrypoint(actionName: string): ApplicationBuilder<TAppStateSchema, TGraphStateSchema> {
     if (this._entrypoint !== null) {
       throw new Error(
         'Entrypoint is already set. ApplicationBuilder.withEntrypoint() can only be called once.'
@@ -139,7 +176,7 @@ export class ApplicationBuilder<
       );
     }
 
-    return new ApplicationBuilder<TAppState, TGraphState>(
+    return new ApplicationBuilder<TAppStateSchema, TGraphStateSchema>(
       this._graph, 
       actionName, 
       this._initialState
@@ -149,8 +186,8 @@ export class ApplicationBuilder<
   /**
    * Set the initial state for this application.
    * 
-   * When TAppState is not set (never), infers from state.
-   * Validates at compile-time that state type extends graph requirements (if graph is set).
+   * When TAppStateSchema is not set (never), infers from state schema.
+   * Validates at compile-time that state schema's inferred type extends graph requirements (if graph is set).
    * 
    * @param initialState - State instance created with createState()
    * @returns New ApplicationBuilder instance with state set
@@ -166,14 +203,15 @@ export class ApplicationBuilder<
    * ```
    */
   withState<TNewStateSchema extends z.ZodType<Record<string, any>>>(
-    initialState: [TGraphState] extends [never]
-      ? StateInstance<TNewStateSchema, any, any>
-      : z.infer<TNewStateSchema> extends TGraphState
-        ? StateInstance<TNewStateSchema, any, any>
-        : { '❌ State schema must extend graph requirements': TGraphState }
+    initialState: ValidatedOrError<
+      TNewStateSchema,
+      TGraphStateSchema,
+      StateInstance<TNewStateSchema, TNewStateSchema, TNewStateSchema>,
+      '❌ State schema must extend graph requirements'
+    >
   ): ApplicationBuilder<
-    [TAppState] extends [never] ? z.infer<TNewStateSchema> : TAppState,
-    TGraphState
+    UseIfNotSet<TAppStateSchema, TNewStateSchema>,
+    TGraphStateSchema
   > {
     if (this._initialState !== null) {
       throw new Error(
@@ -182,8 +220,8 @@ export class ApplicationBuilder<
     }
 
     return new ApplicationBuilder<
-      [TAppState] extends [never] ? z.infer<TNewStateSchema> : TAppState,
-      TGraphState
+      UseIfNotSet<TAppStateSchema, TNewStateSchema>,
+      TGraphStateSchema
     >(
       this._graph,
       this._entrypoint,
@@ -195,7 +233,7 @@ export class ApplicationBuilder<
    * Build the final application.
    * Validates that all required components are set.
    * 
-   * @returns Immutable Application instance with typed state
+   * @returns Immutable Application instance with typed state schema
    * @throws Error if graph, entrypoint, or state is not set
    * 
    * @example
@@ -207,13 +245,7 @@ export class ApplicationBuilder<
    *   .build();
    * ```
    */
-  build(): Application<
-    [TAppState] extends [never] 
-      ? [TGraphState] extends [never]
-        ? Record<string, any>
-        : TGraphState
-      : TAppState
-  > {
+  build(): Application<EnsureRecordSchema<SelectFinalSchema<TAppStateSchema, TGraphStateSchema>>> {
     // Validate all required components are set
     if (this._graph === null) {
       throw new Error(
@@ -233,12 +265,16 @@ export class ApplicationBuilder<
       );
     }
 
-    // TypeScript can't narrow the conditional type properly, so we use type assertion
+    // At runtime, we've validated that state and graph are set
+    // Type assertion is safe because withState/withGraph enforce the constraint at the API boundary
+    // EnsureRecordSchema ensures the constraint is satisfied
+    type FinalStateSchema = EnsureRecordSchema<SelectFinalSchema<TAppStateSchema, TGraphStateSchema>>;
+
     return new Application(
-      this._graph as any,
-      this._entrypoint,
-      this._initialState as any
-    ) as any;
+      this._graph! as Graph<FinalStateSchema>,
+      this._entrypoint!,
+      this._initialState! as StateInstance<FinalStateSchema, FinalStateSchema, FinalStateSchema>
+    ) as Application<FinalStateSchema>;
   }
 }
 

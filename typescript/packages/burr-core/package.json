@@ -8,7 +8,7 @@
     "build": "tsc --build",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:types": "npm run build && cp src/__tests__/index.test-d.ts dist/ && tsd",
+    "test:types": "npm run build && mkdir -p dist/__tests__ && cp src/__tests__/*.test-d.ts dist/__tests__/ && tsd",
     "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist"
   },

@@ -59,6 +59,12 @@ type InferStateType<
   : z.infer<TStateSchema>;
 
 /**
+ * Converts an inferred state type to a Zod schema type.
+ * For bottom-up mode, creates a type-level schema representation.
+ */
+type StateTypeToSchema<TStateType> = z.ZodType<TStateType>;
+
+/**
  * Type for transition condition functions.
  */
 type TransitionCondition<TState> = (state: TState) => boolean | Promise<boolean>;
@@ -90,18 +96,18 @@ export interface Transition {
  * Represents a directed graph of actions and transitions.
  * This is an immutable data structure - no execution logic, just storage and query.
  * 
- * @template TStateType - The inferred state type from all actions (union of reads/writes)
+ * @template TStateSchema - The Zod schema type for the state (union of all action reads/writes)
  */
-export class Graph<TStateType = never> {
+export class Graph<TStateSchema extends z.ZodType = z.ZodNever> {
   /** Immutable map of action names to actions */
   readonly actions: ReadonlyMap<string, Action<any, any, any, any>>;
   
   /** Immutable array of transitions */
   readonly transitions: readonly Transition[];
 
-  /** @internal Type-level field for state type tracking (not used at runtime) */
+  /** @internal Type-level field for state schema tracking (not used at runtime) */
   // @ts-expect-error - This field is only for type-level tracking, not used at runtime
-  private readonly _stateType!: TStateType;
+  private readonly _stateSchema!: TStateSchema;
 
   constructor(
     actions: Record<string, Action<any, any, any, any>>,
@@ -281,12 +287,12 @@ export class GraphBuilder<
   /**
    * Build the final graph.
    * Validates completeness and returns an immutable Graph instance.
-   * The state type is computed as the union of all action reads/writes.
+   * The state schema type is computed as the union of all action reads/writes.
    * 
    * @throws Error if no actions have been added
-   * @returns Immutable Graph instance with computed state type
+   * @returns Immutable Graph instance with computed state schema type
    */
-  build(): Graph<MergeActionStates<TActions>> {
+  build(): Graph<StateTypeToSchema<MergeActionStates<TActions>>> {
     // Validate: Must have at least one action
     const actionNames = Object.keys(this._actions);
     if (actionNames.length === 0) {
@@ -303,7 +309,7 @@ export class GraphBuilder<
       condition
     }));
 
-    return new Graph<MergeActionStates<TActions>>(this._actions, transitions);
+    return new Graph<StateTypeToSchema<MergeActionStates<TActions>>>(this._actions, transitions);
   }
 }
 
