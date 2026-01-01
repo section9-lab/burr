@@ -72,8 +72,8 @@ type ValidatedOrError<
  * @template TGraphStateSchema - Graph's required state schema type (internal, set by withGraph)
  */
 export class ApplicationBuilder<
-  TAppStateSchema extends z.ZodType = z.ZodNever,
-  TGraphStateSchema extends z.ZodType = z.ZodNever
+  TAppStateSchema extends z.ZodType | z.ZodNever = z.ZodNever,
+  TGraphStateSchema extends z.ZodType | z.ZodNever = z.ZodNever
 > {
   private readonly _graph: Graph<TGraphStateSchema> | null;
   private readonly _entrypoint: string | null;

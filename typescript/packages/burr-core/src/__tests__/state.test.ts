@@ -132,9 +132,13 @@ describe('State', () => {
   });
 
   test('test_state_increment_creates_if_missing', () => {
-    // Demonstrates: increment creates field if missing (like Python)
-    // Use z.record() for dynamic fields since we're creating 'count' at runtime
-    const state = createState(z.record(z.string(), z.any()), { foo: 'bar' });
+    // Demonstrates: increment is an upsert - creates field if missing (like Python)
+    // count is NOT in the initial schema - increment adds it dynamically
+    const state = createState(
+      z.object({ foo: z.any() }),
+      { foo: 'bar' }
+    );
+    // increment() upserts: creates count with value 5 (field didn't exist before)
     const incremented = state.increment({ count: 5 });
     expect(incremented.count).toBe(5);
   });
@@ -145,10 +149,16 @@ describe('State', () => {
   // ==========================================================================
 
   test('test_state_merge', () => {
-    // Use z.record() since merge combines states with different fields
-    const state = createState(z.record(z.string(), z.string()), { foo: 'bar', baz: 'qux' });
-    const other = createState(z.record(z.string(), z.string()), { foo: 'baz', quux: 'corge' });
-    const merged = state.merge(other);
+    // Use passthrough() to allow extra properties for testing merge
+    const state = createState(
+      z.object({ foo: z.string(), baz: z.string() }).passthrough(),
+      { foo: 'bar', baz: 'qux' }
+    );
+    const other = createState(
+      z.object({ foo: z.string() }).passthrough(),
+      { foo: 'baz', quux: 'corge' } as any
+    );
+    const merged = state.merge(other as any);
     expect(merged.data).toEqual({ foo: 'baz', baz: 'qux', quux: 'corge' });
   });
 
@@ -159,21 +169,21 @@ describe('State', () => {
 
   test('test_state_append_validate_failure', () => {
     // TS: Runtime validation catches type errors
-    // Use z.record() to test runtime validation (bypasses compile-time checks)
-    const state = createState(z.record(z.string(), z.any()), { foo: 'bar' });
-    expect(() => state.append({ foo: 'baz' })).toThrow("Cannot append to non-array field 'foo'");
+    // Use passthrough() to test runtime validation (bypasses compile-time checks)
+    const state = createState(z.object({ foo: z.any() }).passthrough(), { foo: 'bar' });
+    expect(() => state.append({ foo: 'baz' } as any)).toThrow("Cannot append to non-array field 'foo'");
   });
 
   test('test_state_extend_validate_failure', () => {
-    // Use z.record() to test runtime validation
-    const state = createState(z.record(z.string(), z.any()), { foo: 'bar' });
-    expect(() => state.extend({ foo: ['baz', 'qux'] })).toThrow("Cannot extend non-array field 'foo'");
+    // Use passthrough() to test runtime validation
+    const state = createState(z.object({ foo: z.any() }).passthrough(), { foo: 'bar' });
+    expect(() => state.extend({ foo: ['baz', 'qux'] } as any)).toThrow("Cannot extend non-array field 'foo'");
   });
 
   test('test_state_increment_validate_failure', () => {
-    // Use z.record() to test runtime validation
-    const state = createState(z.record(z.string(), z.any()), { foo: 'bar' });
-    expect(() => state.increment({ foo: 1 })).toThrow("Cannot increment non-numeric field 'foo'");
+    // Use passthrough() to test runtime validation
+    const state = createState(z.object({ foo: z.any() }).passthrough(), { foo: 'bar' });
+    expect(() => state.increment({ foo: 1 } as any)).toThrow("Cannot increment non-numeric field 'foo'");
   });
 
   // ==========================================================================

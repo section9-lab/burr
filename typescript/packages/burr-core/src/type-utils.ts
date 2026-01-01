@@ -278,23 +278,23 @@ export type UseIfNotSet<
 > = [Existing] extends [z.ZodNever] ? New : Existing;
 
 /**
- * Ensures a Zod schema satisfies the Record constraint.
- * If it's ZodNever (not set), converts to a default Record schema.
+ * Ensures a Zod schema satisfies the ZodObject constraint.
+ * If it's ZodNever (not set), converts to an empty ZodObject schema.
  * 
  * Used when building final types where we need to guarantee the constraint is satisfied.
  * 
  * @example
  * ```typescript
- * type Safe = EnsureRecordSchema<z.ZodNever>; // => z.ZodType<Record<string, any>>
+ * type Safe = EnsureRecordSchema<z.ZodNever>; // => z.ZodObject<any>
  * type Safe2 = EnsureRecordSchema<z.object({ a: z.number() })>; // => z.object({ a: z.number() })
  * ```
  */
 export type EnsureRecordSchema<T extends z.ZodType> = 
   T extends z.ZodNever 
-    ? z.ZodType<Record<string, any>>
-    : T extends z.ZodType<Record<string, any>>
+    ? z.ZodObject<{}>
+    : T extends z.ZodObject<any>
       ? T
-      : z.ZodType<Record<string, any>>;
+      : z.ZodObject<{}>;
 
 /**
  * Validates that a new schema's inferred type extends an existing schema's inferred type.

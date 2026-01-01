@@ -96,7 +96,7 @@ export interface Transition {
  * Represents a directed graph of actions and transitions.
  * This is an immutable data structure - no execution logic, just storage and query.
  * 
- * @template TStateSchema - The Zod schema type for the state (union of all action reads/writes)
+ * @template TStateSchema - The Zod object schema type for the state (union of all action reads/writes)
  */
 export class Graph<TStateSchema extends z.ZodType = z.ZodNever> {
   /** Immutable map of action names to actions */
@@ -204,7 +204,7 @@ export class GraphBuilder<
    *   .withActions({ action3 });  // Accumulates types
    * ```
    */
-  withActions<TNewActions extends Record<string, Action<any, any, any, any>>>(
+  withActions<TNewActions extends Record<string, Action<z.ZodObject<any>, z.ZodObject<any>, any, any>>>(
     actions: TNewActions
   ): GraphBuilder<TStateSchema, TActions & TNewActions> {
     // Validate: Check for duplicate action names

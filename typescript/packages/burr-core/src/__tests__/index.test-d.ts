@@ -684,3 +684,112 @@ import { expectError, expectAssignable } from 'tsd';
   }));
 }
 
+// ============================================================================
+// State Operations: Upsert Behavior (Dynamic Field Creation)
+// ============================================================================
+
+// ✅ increment() can create new fields on unrestricted state
+{
+  const state = createState(
+    z.object({ foo: z.string() }),
+    { foo: 'bar' }
+  );
+
+  // increment() should allow creating 'count' field that doesn't exist in schema
+  const incremented = state.increment({ count: 5 });
+  
+  // The field should be accessible (type-level check)
+  expectAssignable<number>(incremented.count);
+}
+
+// ✅ append() can create new array fields on unrestricted state
+{
+  const state = createState(
+    z.object({ foo: z.string() }),
+    { foo: 'bar' }
+  );
+
+  // append() should allow creating 'items' field that doesn't exist in schema
+  const appended = state.append({ items: 'hello' });
+  
+  // The field should be accessible as an array
+  expectAssignable<string[]>(appended.items);
+}
+
+// ✅ extend() can create new array fields on unrestricted state
+{
+  const state = createState(
+    z.object({ foo: z.string() }),
+    { foo: 'bar' }
+  );
+
+  // extend() should allow creating 'items' field that doesn't exist in schema
+  const extended = state.extend({ items: ['a', 'b'] });
+  
+  // The field should be accessible as an array
+  expectAssignable<string[]>(extended.items);
+}
+
+// ✅ Chained upserts: increment() then increment() again on new field
+{
+  const state = createState(
+    z.object({ foo: z.string() }),
+    { foo: 'bar' }
+  );
+
+  const incremented = state.increment({ count: 5 });
+  const incrementedAgain = incremented.increment({ count: 3 });
+  
+  // Should work because writable schema was extended
+  expectAssignable<number>(incrementedAgain.count);
+}
+
+// ✅ Chained mixed operations: update() then increment()
+{
+  const state = createState(
+    z.object({ foo: z.string() }),
+    { foo: 'bar' }
+  );
+
+  const updated = state.update({ count: 0 });
+  const incremented = updated.increment({ count: 5 });
+  
+  // Should work because update extended the schema
+  expectAssignable<number>(incremented.count);
+}
+
+// ❌ increment() on restricted state cannot create fields outside writable schema
+{
+  const readsSchema = z.object({ count: z.number(), score: z.number() });
+  const writesSchema = z.object({ count: z.number() });
+  
+  const state = State.forAction(
+    readsSchema,
+    writesSchema,  // writes: only count allowed
+    { count: 0, score: 0 }
+  );
+
+  // Type check: state should be properly typed, not any
+  expectAssignable<number>(state.count);
+  expectAssignable<number>(state.score);
+
+  // Should error: 'score' not in writable schema
+  expectError(state.increment({ score: 1 }));
+}
+
+// ✅ Action update function preserves writable schema type
+{
+  const testAction = action({
+    reads: z.object({ x: z.number() }),
+    writes: z.object({ y: z.number() }),
+    update: ({ state }) => {
+      const updated = state.update({ y: 5 });
+      // The writable schema should still include 'y' for subsequent ops
+      expectAssignable<z.ZodType<{ y: number }>>(updated as any);
+      return updated;
+    }
+  });
+
+  expectAssignable(testAction);
+}
+

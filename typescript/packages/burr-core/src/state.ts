@@ -670,47 +670,57 @@ export class State<
   }
 
   /**
-   * Increments one or more numeric fields (type-safe).
-   * Only allows incrementing fields defined in the writable schema.
-   * Excess properties are rejected at compile-time.
+   * Increments one or more numeric fields (type-safe upsert).
+   * Creates fields if they don't exist (starting from 0).
+   * Works like update() - extends the schema with new fields.
    * 
-   * The readable schema is extended with incremented fields, allowing you to
-   * read back what you just modified.
+   * For restricted states, only allows incrementing fields in writable schema.
+   * For unrestricted states (createState), allows any field name.
    * 
    * @example
-   * state.increment({ count: 1, score: 5 })
+   * state.increment({ count: 1, score: 5 })  // Upserts count and score
    */
-  increment<TUpdates extends {
-    [K in NumberKeys<z.infer<TWritableSchema>>]?: number;
-  }>(
-    updates: NoExcessProperties<
-      { [K in NumberKeys<z.infer<TWritableSchema>>]?: number },
-      TUpdates
-    >
+  increment<TUpdates extends Record<string, number>>(
+    updates: TUpdates & (
+      TWritableSchema extends TSchema 
+        ? {} // Unrestricted: allow any field
+        : NoExcessProperties<{ [K in NumberKeys<z.infer<TWritableSchema>>]?: number }, TUpdates>
+    )
   ): StateInstance<
-    TSchema,
+    z.ZodType<z.infer<TSchema> & TUpdates>,
     z.ZodType<z.infer<TReadableSchema> & TUpdates>,
-    TWritableSchema
+    z.ZodType<z.infer<TWritableSchema> & TUpdates>
   > {
-    let currentState: StateInstance<TSchema, TReadableSchema, TWritableSchema> = this as any;
+    // Start with current data
+    let currentData = { ...this._data } as Record<string, any>;
     
+    // Apply all increments
     for (const [key, delta] of Object.entries(updates)) {
-      currentState = currentState.applyOperation<z.infer<TSchema>>(
-        new IncrementFieldOperation<Record<string, any>, NumberKeys<Record<string, any>>>(
-          key as NumberKeys<Record<string, any>>,
-          delta as number
-        )
-      ) as StateInstance<TSchema, TReadableSchema, TWritableSchema>;
+      const current = (currentData[key] as number | undefined) ?? 0;
+      if (currentData[key] !== undefined && typeof currentData[key] !== 'number') {
+        throw new Error(
+          `Cannot increment non-numeric field '${key}'. Current type: ${typeof currentData[key]}`
+        );
+      }
+      currentData[key] = current + delta;
     }
     
-    // Extend readable schema with incremented fields
+    // Extend all schemas with incremented fields (upsert behavior)
+    const extendedSchema: any = this._schema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._schema, updates)
+      : this._schema;
+      
     const extendedReadableSchema: any = this._readableSchema instanceof z.ZodObject
       ? extendSchemaWithFields(this._readableSchema, updates)
       : this._readableSchema;
+      
+    const extendedWritableSchema: any = this._writableSchema instanceof z.ZodObject
+      ? extendSchemaWithFields(this._writableSchema, updates)
+      : this._writableSchema;
     
-    return new State(currentState._schema, currentState._data, {
+    return new State(extendedSchema, currentData, {
       readable: extendedReadableSchema,
-      writable: currentState._writableSchema,
+      writable: extendedWritableSchema,
     }) as any;
   }
 
@@ -757,7 +767,17 @@ export class State<
    * @param data - The serialized state data
    * @throws {z.ZodError} If the data doesn't match the schema
    */
-  static deserialize<TSchema extends z.ZodType<Record<string, any>>>(
+  /**
+   * Deserializes state from JSON-compatible object with schema validation.
+   * This ensures that loaded state matches the expected schema.
+   *
+   * **Requires a Zod object schema** - this ensures runtime operations like `.extend()` work correctly.
+   *
+   * @param schema - Zod schema to validate against
+   * @param data - The serialized state data
+   * @throws {z.ZodError} If the data doesn't match the schema
+   */
+  static deserialize<TSchema extends z.ZodObject<any>>(
     schema: TSchema,
     data: z.infer<TSchema>
   ): StateInstance<TSchema, TSchema, TSchema> {
@@ -772,9 +792,19 @@ export class State<
    * @param writes - Schema defining writable fields
    * @param data - Initial data matching the reads schema
    */
+  /**
+   * Creates a restricted state for use in actions.
+   * The state can read from 'reads' schema and write to 'writes' schema.
+   *
+   * **Requires Zod object schemas** - this ensures runtime operations like `.extend()` work correctly.
+   *
+   * @param reads - Schema defining readable fields
+   * @param writes - Schema defining writable fields
+   * @param data - Initial data matching the reads schema
+   */
   static forAction<
-    TReadsSchema extends z.ZodType<Record<string, any>>,
-    TWritesSchema extends z.ZodType<Record<string, any>>
+    TReadsSchema extends z.ZodObject<any>,
+    TWritesSchema extends z.ZodObject<any>
   >(
     reads: TReadsSchema,
     writes: TWritesSchema,
@@ -814,7 +844,24 @@ export class State<
  * // Can read and write all fields
  * ```
  */
-export function createState<TSchema extends z.ZodType<Record<string, any>>>(
+/**
+ * Helper function to create an unrestricted State with automatic type inference from schema.
+ * This provides better DX by inferring the type parameter from the schema.
+ *
+ * **Requires a Zod object schema** - this ensures runtime operations like `.extend()` work correctly.
+ *
+ * @example
+ * ```typescript
+ * const MyStateSchema = z.object({
+ *   count: z.number(),
+ *   name: z.string()
+ * });
+ *
+ * const state = createState(MyStateSchema, { count: 0, name: 'test' });
+ * // Can read and write all fields
+ * ```
+ */
+export function createState<TSchema extends z.ZodObject<any>>(
   schema: TSchema,
   initialData: z.infer<TSchema>
 ): StateInstance<TSchema, TSchema, TSchema> {
@@ -841,7 +888,29 @@ export function createState<TSchema extends z.ZodType<Record<string, any>>>(
  * const state2 = createStateWithDefaults(MyStateSchema, { count: 5 });
  * ```
  */
-export function createStateWithDefaults<TSchema extends z.ZodType<Record<string, any>>>(
+/**
+ * Factory function to create a new State instance with defaults (power-user mode)
+ *
+ * This function allows you to create state without providing explicit data,
+ * relying on Zod's `.default()` values to fill in the fields at runtime.
+ *
+ * **Requires a Zod object schema** - this ensures runtime operations like `.extend()` work correctly.
+ *
+ * @example
+ * ```typescript
+ * const MyStateSchema = z.object({
+ *   count: z.number().default(0),
+ *   name: z.string().default('untitled')
+ * });
+ *
+ * // No data parameter needed - Zod fills defaults
+ * const state = createStateWithDefaults(MyStateSchema);
+ *
+ * // Or provide partial data to override some defaults
+ * const state2 = createStateWithDefaults(MyStateSchema, { count: 5 });
+ * ```
+ */
+export function createStateWithDefaults<TSchema extends z.ZodObject<any>>(
   schema: TSchema,
   initialData?: Partial<z.infer<TSchema>>
 ): StateInstance<TSchema, TSchema, TSchema> {

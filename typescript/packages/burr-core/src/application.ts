@@ -27,11 +27,11 @@ import { z } from 'zod';
 /**
  * Result of executing a single step.
  * 
- * @template TStateSchema - The Zod schema type for the application state
+ * @template TStateSchema - The Zod schema type for the application state (allows type narrowing)
  */
 export interface StepResult<TStateSchema extends z.ZodType<Record<string, any>> = z.ZodType<Record<string, any>>> {
   /** The action that was executed */
-  action: Action<z.ZodType<Record<string, any>>, z.ZodType<Record<string, any>>, z.ZodType, z.ZodObject<any> | z.ZodVoid>;
+  action: Action<z.ZodObject<any>, z.ZodObject<any>, z.ZodType, z.ZodObject<any> | z.ZodVoid>;
   
   /** The result returned from action.run() */
   result: Record<string, any> | void;
@@ -46,11 +46,11 @@ export interface StepResult<TStateSchema extends z.ZodType<Record<string, any>> 
 /**
  * Result of running the application to completion.
  * 
- * @template TStateSchema - The Zod schema type for the application state
+ * @template TStateSchema - The Zod schema type for the application state (allows type narrowing)
  */
 export interface RunResult<TStateSchema extends z.ZodType<Record<string, any>> = z.ZodType<Record<string, any>>> {
   /** The final action that was executed (or null if halted before execution) */
-  action: Action<z.ZodType<Record<string, any>>, z.ZodType<Record<string, any>>, z.ZodType, z.ZodObject<any> | z.ZodVoid> | null;
+  action: Action<z.ZodObject<any>, z.ZodObject<any>, z.ZodType, z.ZodObject<any> | z.ZodVoid> | null;
   
   /** The result from the final action (or null if halted before execution) */
   result: Record<string, any> | void | null;
@@ -78,7 +78,7 @@ export interface ExecutionOptions {
  * Represents a runnable application.
  * An application combines a graph structure with runtime configuration.
  * 
- * @template TStateSchema - The Zod schema type for the application state
+ * @template TStateSchema - The Zod schema type for the application state (allows type narrowing)
  */
 export class Application<TStateSchema extends z.ZodType<Record<string, any>> = z.ZodType<Record<string, any>>> {
   /** The graph defining the structure of the application */

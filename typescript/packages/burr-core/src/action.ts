@@ -24,16 +24,31 @@ import { State, StateInstance } from './state';
  * Helper type to enforce strict return type checking for update functions.
  * Forces TypeScript to validate the return type at definition time, not usage time.
  */
+/**
+ * Update function return type.
+ * 
+ * The returned state must contain at least the writes (validated at runtime).
+ * The writable schema reflects what was written, allowing subsequent operations
+ * on those fields (useful for testing and chaining).
+ * 
+ * We use z.ZodType<z.infer<TWritesSchema>> instead of TWritesSchema directly
+ * to allow type narrowing from state.update() while maintaining the constraint
+ * that the schema must at least include the writes.
+ */
 type UpdateFunction<
-  TReadsSchema extends z.ZodType<Record<string, any>>,
-  TWritesSchema extends z.ZodType<Record<string, any>>,
+  TReadsSchema extends z.ZodObject<any>,
+  TWritesSchema extends z.ZodObject<any>,
   TInputsSchema extends z.ZodType,
   TResultSchema extends z.ZodObject<any> | z.ZodVoid
 > = (params: {
   result: z.infer<TResultSchema>;
   state: StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
   inputs: z.infer<TInputsSchema>;
-}) => StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, any>;
+}) => StateInstance<
+  z.ZodType<z.infer<TWritesSchema>>,  // Main schema: must at least include writes
+  any,                                 // Readable: flexible for narrowing
+  z.ZodType<z.infer<TWritesSchema>>   // Writable: includes what was written (enables subsequent ops)
+>;
 
 /**
  * Two-step action with separate run and update phases.
@@ -47,10 +62,12 @@ type UpdateFunction<
  * - Event sourcing: store results and replay updates
  * - Testing: test computation and state transformation separately
  * - Audit trails: track what was computed vs. what was stored
+ *
+ * **Requires Zod object schemas for reads/writes** - this ensures runtime key extraction works correctly.
  */
 export class Action<
-  TReadsSchema extends z.ZodType<Record<string, any>>,
-  TWritesSchema extends z.ZodType<Record<string, any>>,
+  TReadsSchema extends z.ZodObject<any>,
+  TWritesSchema extends z.ZodObject<any>,
   TInputsSchema extends z.ZodType,
   TResultSchema extends z.ZodObject<any> | z.ZodVoid
 > {
@@ -70,7 +87,7 @@ export class Action<
     result: z.infer<TResultSchema>;
     state: StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
     inputs: z.infer<TInputsSchema>;
-  }) => StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, any>;
+  }) => StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, z.ZodType<z.infer<TWritesSchema>>>;
 
   // Cached metadata
   private readonly _readsKeys: readonly string[];
@@ -90,7 +107,7 @@ export class Action<
       result: z.infer<TResultSchema>;
       state: StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
       inputs: z.infer<TInputsSchema>;
-    }) => StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, any>;
+    }) => StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, z.ZodType<z.infer<TWritesSchema>>>;
   }) {
     this._reads = config.reads;
     this._writes = config.writes;
@@ -195,17 +212,20 @@ export class Action<
    * Transform result into state writes.
    * Validates result and state, calls user's update function, validates writes.
    *
+   * The returned state is guaranteed to contain at least the writes schema fields,
+   * and those fields can be used in subsequent operations.
+   *
    * @param params - Parameters object
    * @param params.result - Result from run method
    * @param params.state - State instance (for reference)
    * @param params.inputs - Runtime inputs (for convenience)
-   * @returns State with writes applied
+   * @returns State with writes applied (writable schema = writes for subsequent ops)
    */
   update(params: {
     result: z.infer<TResultSchema>;
     state: StateInstance<TReadsSchema, TReadsSchema, TWritesSchema>;
     inputs: z.infer<TInputsSchema>;
-  }): StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, any> {
+  }): StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, z.ZodType<z.infer<TWritesSchema>>> {
     const { result, state, inputs } = params;
     
     // Validate inputs
@@ -226,15 +246,18 @@ export class Action<
    * Execute the full action (run + update) with a full application state.
    * This is the method applications use to execute actions.
    *
+   * The returned state contains at least the writes schema fields,
+   * and those fields can be used in subsequent operations.
+   *
    * @param params - Parameters object
    * @param params.state - The full application state (unrestricted)
    * @param params.inputs - Runtime inputs
-   * @returns State containing the writes (for merging back into app state)
+   * @returns State containing the writes (writable schema = writes for subsequent ops)
    */
   async execute(params: {
     state: StateInstance<any, any, any>;
     inputs: z.infer<TInputsSchema>;
-  }): Promise<StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, any>> {
+  }): Promise<StateInstance<z.ZodType<z.infer<TWritesSchema>>, any, z.ZodType<z.infer<TWritesSchema>>>> {
     const { state: fullAppState, inputs } = params;
     
     // Extract reads subset from full app state
@@ -293,8 +316,8 @@ export class Action<
 
 // Overload 1: When result is specified, run is required
 export function action<
-  TReadsSchema extends z.ZodType<Record<string, any>> = z.ZodObject<{}>,
-  TWritesSchema extends z.ZodType<Record<string, any>> = z.ZodObject<{}>,
+  TReadsSchema extends z.ZodObject<any> = z.ZodObject<{}>,
+  TWritesSchema extends z.ZodObject<any> = z.ZodObject<{}>,
   TInputsSchema extends z.ZodType = z.ZodVoid,
   TResultSchema extends z.ZodObject<any> | z.ZodVoid = z.ZodObject<{}>
 >(config: {
@@ -311,8 +334,8 @@ export function action<
 
 // Overload 2: When result is NOT specified, run is optional (defaults to empty object)
 export function action<
-  TReadsSchema extends z.ZodType<Record<string, any>> = z.ZodObject<{}>,
-  TWritesSchema extends z.ZodType<Record<string, any>> = z.ZodObject<{}>,
+  TReadsSchema extends z.ZodObject<any> = z.ZodObject<{}>,
+  TWritesSchema extends z.ZodObject<any> = z.ZodObject<{}>,
   TInputsSchema extends z.ZodType = z.ZodVoid
 >(config: {
   reads?: TReadsSchema;
@@ -328,8 +351,8 @@ export function action<
 
 // Implementation
 export function action<
-  TReadsSchema extends z.ZodType<Record<string, any>> = z.ZodObject<{}>,
-  TWritesSchema extends z.ZodType<Record<string, any>> = z.ZodObject<{}>,
+  TReadsSchema extends z.ZodObject<any> = z.ZodObject<{}>,
+  TWritesSchema extends z.ZodObject<any> = z.ZodObject<{}>,
   TInputsSchema extends z.ZodType = z.ZodVoid,
   TResultSchema extends z.ZodObject<any> | z.ZodVoid = z.ZodObject<{}>
 >(config: {
