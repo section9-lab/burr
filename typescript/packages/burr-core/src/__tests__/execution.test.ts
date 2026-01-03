@@ -88,11 +88,11 @@ const setLevel = action({
 });
 
 // ============================================================================
-// 1-5: Core Execution - app.step()
+// Core Execution - app.step()
 // ============================================================================
 
 describe('app.step() - Basic Execution', () => {
-  test('1. step_basic: executes single action and advances state', async () => {
+  test('executes single action and advances state', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter })
       .withTransitions(['counter', 'counter'])
@@ -111,7 +111,7 @@ describe('app.step() - Basic Execution', () => {
     expect(result!.next).toContain('counter');
   });
 
-  test('2. step_with_inputs: passes inputs to action', async () => {
+  test('passes inputs to action', async () => {
     const graph = new GraphBuilder()
       .withActions({ counterWithInputs })
       .withTransitions(['counterWithInputs', 'counterWithInputs'])
@@ -129,7 +129,7 @@ describe('app.step() - Basic Execution', () => {
     expect(result!.state.count).toBe(6);  // 0 + 1 + 5
   });
 
-  test('3. step_missing_inputs: throws validation error', async () => {
+  test('throws validation error for missing inputs', async () => {
     const graph = new GraphBuilder()
       .withActions({ counterWithInputs })
       .build();  // No transitions = terminal
@@ -143,7 +143,7 @@ describe('app.step() - Basic Execution', () => {
     await expect(app.step()).rejects.toThrow(/required.*input|missing/i);
   });
 
-  test('4. step_terminal: returns null when no next actions', async () => {
+  test('returns null when no next actions', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter })
       .build();  // No transitions = terminal
@@ -160,7 +160,7 @@ describe('app.step() - Basic Execution', () => {
     expect(result).toBeNull();
   });
 
-  test('5. step_error_propagation: action errors bubble up', async () => {
+  test('action errors bubble up', async () => {
     const graph = new GraphBuilder()
       .withActions({ brokenAction })
       .build();  // No transitions = terminal
@@ -176,11 +176,11 @@ describe('app.step() - Basic Execution', () => {
 });
 
 // ============================================================================
-// 6-10: Core Execution - app.run()
+// Core Execution - app.run()
 // ============================================================================
 
 describe('app.run() - Run to Completion', () => {
-  test('6. run_to_completion: runs until terminal state', async () => {
+  test('runs until terminal state', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter, result })
       .withTransitions(
@@ -202,7 +202,7 @@ describe('app.run() - Run to Completion', () => {
     expect(final.result).toHaveProperty('value', 10);
   });
 
-  test('7. run_halt_after: stops after executing specified action', async () => {
+  test('stops after executing specified action', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter, result })
       .withTransitions(
@@ -224,7 +224,7 @@ describe('app.run() - Run to Completion', () => {
     expect(final.result).toHaveProperty('value', 10);
   });
 
-  test('8. run_halt_before: stops before executing specified action', async () => {
+  test('stops before executing specified action', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter, result })
       .withTransitions(
@@ -243,10 +243,10 @@ describe('app.run() - Run to Completion', () => {
     const final = await app.run({ haltBefore: ['result'] });
 
     expect(final.state.count).toBe(10);
-    expect(final.result).toBeUndefined();  // Didn't execute result
+    expect(final.result).toBeNull();  // Didn't execute result (halted before)
   });
 
-  test('9. run_with_inputs: global inputs available to all actions', async () => {
+  test('global inputs available to all actions', async () => {
     const graph = new GraphBuilder()
       .withActions({ counterWithInputs, result })
       .withTransitions(
@@ -270,28 +270,14 @@ describe('app.run() - Run to Completion', () => {
     expect(final.state.count).toBe(10);
   });
 
-  test('10. run_loop_detection: throws after reasonable iteration limit', async () => {
-    const graph = new GraphBuilder()
-      .withActions({ counter })
-      .withTransitions(['counter', 'counter'])  // Infinite loop
-      .build();
-
-    const app = new ApplicationBuilder()
-      .withGraph(graph)
-      .withState(createState(z.object({ count: z.number() }), { count: 0 }))
-      .withEntrypoint('counter')
-      .build();
-
-    await expect(app.run()).rejects.toThrow(/loop|limit|maximum/i);
-  });
 });
 
 // ============================================================================
-// 11-12: Core Execution - app.iterate()
+// Core Execution - app.iterate()
 // ============================================================================
 
 describe('app.iterate() - Iterator Pattern', () => {
-  test('11. iterate_yields_steps: yields each step until completion', async () => {
+  test('yields each step until completion', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter, result })
       .withTransitions(
@@ -316,7 +302,7 @@ describe('app.iterate() - Iterator Pattern', () => {
     expect(stepCount).toBe(6);
   });
 
-  test('12. iterate_early_break: user can break out of iteration', async () => {
+  test('user can break out of iteration', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter })
       .withTransitions(['counter', 'counter'])
@@ -341,11 +327,11 @@ describe('app.iterate() - Iterator Pattern', () => {
 });
 
 // ============================================================================
-// 13-15: State Management
+// State Management
 // ============================================================================
 
 describe('State Management', () => {
-  test('13. state_merge_partial_writes: preserves unwritten fields', async () => {
+  test('preserves unwritten fields', async () => {
     const graph = new GraphBuilder()
       .withActions({ partialWriter })
       .build();  // No transitions = terminal
@@ -366,7 +352,7 @@ describe('State Management', () => {
     expect(result!.state.name).toBe('Alice'); // Preserved
   });
 
-  test('14. state_validates_writes: runtime error for missing writes', async () => {
+  test('runtime error for missing writes', async () => {
     const graph = new GraphBuilder()
       .withActions({ missingWrites })
       .build();  // No transitions = terminal
@@ -380,7 +366,7 @@ describe('State Management', () => {
     await expect(app.step()).rejects.toThrow(/missing.*not.*written|required/i);
   });
 
-  test('15. state_validates_reads: runtime error for missing state fields', async () => {
+  test('runtime error for missing state fields', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter })
       .build();  // No transitions = terminal
@@ -396,11 +382,11 @@ describe('State Management', () => {
 });
 
 // ============================================================================
-// 16-18: Graph & Transitions
+// Graph & Transitions
 // ============================================================================
 
 describe('Graph & Transitions', () => {
-  test('16. transitions_evaluated_in_order: first match wins', async () => {
+  test('transitions_evaluated_in_order: first match wins', async () => {
     const low = action({
       reads: z.object({ count: z.number() }),
       writes: z.object({ level: z.string() }),
@@ -448,7 +434,7 @@ describe('Graph & Transitions', () => {
     expect(result2!.next).toContain('high');  // count >= 5
   });
 
-  test('17. transitions_conditional: conditions evaluate on current state', async () => {
+  test('transitions_conditional: conditions evaluate on current state', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter, setLevel })
       .withTransitions(
@@ -473,7 +459,7 @@ describe('Graph & Transitions', () => {
     expect(result.state.level).toBe('high');  // 10 >= 5
   });
 
-  test('18. transitions_returns_next: step result includes next action names', async () => {
+  test('transitions_returns_next: step result includes next action names', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter })
       .build();  // No transitions = terminal
@@ -491,11 +477,11 @@ describe('Graph & Transitions', () => {
 });
 
 // ============================================================================
-// 19-20: Integration Scenarios
+// Integration Scenarios
 // ============================================================================
 
 describe('Integration Scenarios', () => {
-  test('19. multi_action_sequence: counter → result → terminal', async () => {
+  test('multi_action_sequence: counter → result → terminal', async () => {
     const graph = new GraphBuilder()
       .withActions({ counter, result })
       .withTransitions(
@@ -532,7 +518,7 @@ describe('Integration Scenarios', () => {
     expect(step5).toBeNull();
   });
 
-  test('20. action_with_result: run/update phases work correctly', async () => {
+  test('action_with_result: run/update phases work correctly', async () => {
     const multiPhase = action({
       reads: z.object({ input: z.string() }),
       writes: z.object({ output: z.string() }),

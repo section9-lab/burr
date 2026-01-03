@@ -24,6 +24,17 @@ import { extendSchemaWithFields } from './schema-utils';
 // Re-export type utilities for backwards compatibility
 export type { NumberKeys, ArrayKeys, ArrayElement };
 
+/**
+ * Check if a key is reserved for framework metadata.
+ * Any key ending in "Metadata" is reserved for framework use.
+ * 
+ * This is exported from state.ts so Action can validate against it,
+ * but the actual metadata schemas are defined in application.ts.
+ */
+export function isReservedMetadataKey(key: string): boolean {
+  return key.endsWith('Metadata');
+}
+
 // ============================================================================
 // Operation Interface
 // ============================================================================

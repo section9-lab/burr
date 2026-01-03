@@ -190,7 +190,9 @@ describe('Graph', () => {
       .withActions({ action1 })
       .build();
     
-    expect(graph.getAction('action1')).toBe(action1);
+    const retrieved = graph.getAction('action1');
+    expect(retrieved).toBeDefined();
+    expect(retrieved?.name).toBe('action1'); // GraphBuilder sets the name
     expect(graph.getAction('nonexistent')).toBeUndefined();
   });
 

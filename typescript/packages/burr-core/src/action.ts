@@ -140,12 +140,39 @@ export class Action<
 
   /**
    * Validate data against schema with contextual error messages.
+   * Special handling: void schemas always pass (inputs are ignored for void actions).
    */
   private validate(data: unknown, schema: z.ZodType, context: string): void {
     try {
+      // Special case: void schemas don't validate inputs (they're ignored)
+      // This allows global inputs to be passed without breaking void-input actions
+      if (schema instanceof z.ZodVoid) {
+        return;  // Skip validation for void schemas
+      }
+      
       schema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // Provide context-specific error messages
+        const issues = error.issues;
+        // Check if any issues are about missing fields (received type is 'undefined')
+        const hasMissingFields = issues.some(
+          issue => {
+            if (issue.code !== 'invalid_type') return false;
+            const received = (issue as any).received;
+            // Check if received is the string 'undefined' or refers to an undefined value
+            return received === 'undefined' || received === undefined;
+          }
+        );
+        
+        if (hasMissingFields) {
+          if (context === 'inputs') {
+            throw new Error(`Action validation failed for ${context}: Missing required input fields`);
+          } else if (context === 'writes') {
+            throw new Error(`Action validation failed for ${context}: Missing required write fields`);
+          }
+        }
+        
         throw new Error(`Action validation failed for ${context}: ${error.message}`);
       }
       throw error;
@@ -157,6 +184,26 @@ export class Action<
    */
   get name(): string | undefined {
     return this._name;
+  }
+
+  /**
+   * Create a new Action with a name set (immutable operation).
+   * This allows actions to be reusable - the same action can be added to
+   * different graphs with different names.
+   * 
+   * @param name - The name for this action
+   * @returns A new Action instance with the name set
+   */
+  withName(name: string): Action<TReadsSchema, TWritesSchema, TInputsSchema, TResultSchema> {
+    return new Action({
+      name,
+      reads: this._reads,
+      writes: this._writes,
+      inputs: this._inputs,
+      result: this._result,
+      run: this._runFn,
+      update: this._updateFn,
+    });
   }
 
   /**
@@ -250,6 +297,12 @@ export class Action<
 
     // Validate that the returned state contains the required writes
     this.validate(updatedState.data, this._writes, 'writes');
+    
+    // TODO: Add validation that actions don't write to reserved metadata keys
+    // This should be checked at Application level:
+    // 1. Action declares outputs (writes schema)
+    // 2. Build-time validation catches reserved key declarations
+    // 3. Runtime validation ensures action adheres to declared writes
 
     return updatedState;
   }

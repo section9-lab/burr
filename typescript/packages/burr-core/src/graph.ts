@@ -221,9 +221,18 @@ export class GraphBuilder<
       );
     }
 
+    // Set action names from keys (immutable operation via withName())
+    // If action already has the correct name, keep it (preserve reference)
+    const actionsWithNames = Object.fromEntries(
+      Object.entries(actions).map(([name, action]) => [
+        name,
+        action.name === name ? action : action.withName(name)
+      ])
+    ) as TNewActions;
+
     // Create new builder with merged actions (immutable)
     return new GraphBuilder<TStateSchema, TActions & TNewActions>(
-      { ...this._actions, ...actions } as TActions & TNewActions,
+      { ...this._actions, ...actionsWithNames } as TActions & TNewActions,
       [...this._transitions]
     );
   }

@@ -81,15 +81,24 @@ export class ApplicationBuilder<
   private readonly _graph: Graph<TGraphStateSchema> | null;
   private readonly _entrypoint: string | null;
   private readonly _initialState: StateInstance<any, any, any> | null;
+  private readonly _appId: string | null;
+  private readonly _partitionKey: string | undefined;
+  private readonly _initialSequenceId: number | undefined;
 
   constructor(
     graph: Graph<TGraphStateSchema> | null = null,
     entrypoint: string | null = null,
-    initialState: StateInstance<any, any, any> | null = null
+    initialState: StateInstance<any, any, any> | null = null,
+    appId: string | null = null,
+    partitionKey: string | undefined = undefined,
+    initialSequenceId: number | undefined = undefined
   ) {
     this._graph = graph;
     this._entrypoint = entrypoint;
     this._initialState = initialState;
+    this._appId = appId;
+    this._partitionKey = partitionKey;
+    this._initialSequenceId = initialSequenceId;
   }
 
   /**
@@ -140,7 +149,10 @@ export class ApplicationBuilder<
     >(
       graph as Graph<TNewGraphStateSchema>,
       this._entrypoint,
-      this._initialState
+      this._initialState,
+      this._appId,
+      this._partitionKey,
+      this._initialSequenceId
     );
   }
 
@@ -182,7 +194,10 @@ export class ApplicationBuilder<
     return new ApplicationBuilder<TAppStateSchema, TGraphStateSchema>(
       this._graph, 
       actionName, 
-      this._initialState
+      this._initialState,
+      this._appId,
+      this._partitionKey,
+      this._initialSequenceId
     );
   }
 
@@ -231,13 +246,50 @@ export class ApplicationBuilder<
     >(
       this._graph,
       this._entrypoint,
-      initialState as any
+      initialState as any,
+      this._appId,
+      this._partitionKey,
+      this._initialSequenceId
+    );
+  }
+
+  /**
+   * Set application identifiers (appId, partitionKey, initialSequenceId).
+   * 
+   * @param appId - Unique identifier for this application instance (auto-generated if not provided)
+   * @param partitionKey - Optional partition key for grouping/querying application runs
+   * @param initialSequenceId - Optional initial sequence ID (defaults to 0)
+   * 
+   * @example
+   * ```typescript
+   * const app = new ApplicationBuilder()
+   *   .withIdentifiers('my-app-123', 'user-456')
+   *   .withGraph(graph)
+   *   .withState(initialState)
+   *   .withEntrypoint('start')
+   *   .build();
+   * ```
+   */
+  withIdentifiers(
+    appId?: string,
+    partitionKey?: string,
+    initialSequenceId?: number
+  ): ApplicationBuilder<TAppStateSchema, TGraphStateSchema> {
+    return new ApplicationBuilder<TAppStateSchema, TGraphStateSchema>(
+      this._graph,
+      this._entrypoint,
+      this._initialState,
+      appId ?? this._appId,
+      partitionKey ?? this._partitionKey,
+      initialSequenceId ?? this._initialSequenceId
     );
   }
 
   /**
    * Build the final application.
    * Validates that all required components are set.
+   * 
+   * If appId is not set, a random UUID will be generated.
    * 
    * @returns Immutable Application instance with typed state schema
    * @throws Error if graph, entrypoint, or state is not set
@@ -277,6 +329,9 @@ export class ApplicationBuilder<
     // Runtime validation would catch this, but we'd lose IDE errors.
     // Future enhancement: Add runtime check or improve type system to track entrypoint schema.
 
+    // Generate default appId if not provided
+    const appId = this._appId ?? `app-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     // At runtime, we've validated that state and graph are set
     // Type assertion is safe because withState/withGraph enforce the constraint at the API boundary
     // EnsureRecordSchema ensures the constraint is satisfied
@@ -285,7 +340,10 @@ export class ApplicationBuilder<
     return new Application(
       this._graph! as Graph<FinalStateSchema>,
       this._entrypoint!,
-      this._initialState! as StateInstance<FinalStateSchema, FinalStateSchema, FinalStateSchema>
+      this._initialState! as StateInstance<FinalStateSchema, FinalStateSchema, FinalStateSchema>,
+      appId,
+      this._partitionKey,
+      this._initialSequenceId
     ) as Application<FinalStateSchema>;
   }
 }
