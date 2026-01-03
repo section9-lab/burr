@@ -141,9 +141,6 @@ export interface StepResult<TStateSchema extends z.ZodType<Record<string, any>>>
   
   /** The result returned from action.run() */
   result: Record<string, any> | void;
-  
-  /** Possible next actions (from transitions) */
-  next: string[];
 }
 
 /**
@@ -192,9 +189,6 @@ export class Application<TStateSchema extends z.ZodType<Record<string, any>> = z
   /** Optional partition key for grouping/querying application runs */
   readonly partitionKey?: string;
   
-  /** The initial state passed to constructor (without metadata, as user provided it) */
-  readonly initialState: StateInstance<TStateSchema, TStateSchema, TStateSchema>;
-  
   /** Internal runtime state (includes user data + framework metadata) */
   private _state: ApplicationStateInstance<TStateSchema>;
 
@@ -214,7 +208,6 @@ export class Application<TStateSchema extends z.ZodType<Record<string, any>> = z
     this.entrypoint = entrypoint;
     this.appId = appId;
     this.partitionKey = partitionKey;
-    this.initialState = initialState;
     
     // Extend user's state with framework metadata
     this._state = initialState.update({
@@ -305,25 +298,6 @@ export class Application<TStateSchema extends z.ZodType<Record<string, any>> = z
   }
   
   /**
-   * Get possible next action names from current state.
-   * @internal
-   */
-  private getNextActionNames(): string[] {
-    const priorStep = this.executionMetadata.priorStep;
-    
-    // If no prior step, return entrypoint
-    if (!priorStep) {
-      return [this.entrypoint];
-    }
-    
-    // Get transitions and return target action names
-    const transitions = this.graph.getTransitionsFrom(priorStep);
-    return transitions
-      .map(t => t.to)
-      .filter((name): name is string => name !== null);
-  }
-
-  /**
    * Executes a single step of the application.
    * 
    * Advances the state machine by one action, executing the next action
@@ -371,14 +345,10 @@ export class Application<TStateSchema extends z.ZodType<Record<string, any>> = z
       const actionName = nextAction.name || 'unknown';
       this.setPriorStep(actionName);
       
-      // Get possible next actions
-      const nextActionNames = this.getNextActionNames();
-      
       return {
         action: nextAction,
         result,
-        state: this._state,
-        next: nextActionNames
+        state: this._state
       };
     } catch (error) {
       // TODO: Format error message like Python (include action name, state, inputs)
@@ -434,6 +404,9 @@ export class Application<TStateSchema extends z.ZodType<Record<string, any>> = z
       
       // If terminal (no more actions), return
       if (!stepResult) {
+        // TODO: Add warning if lastAction is null (no actions were executed)
+        // Python considers this undefined behavior: app starts at terminal state with no actions available.
+        // Should warn user to fix state machine or halt conditions.
         return {
           action: lastAction,
           result: lastResult,

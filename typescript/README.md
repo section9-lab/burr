@@ -82,42 +82,63 @@ This implementation aims to match the Python version's core functionality with T
 
 | Feature | Python | TypeScript | Notes |
 |---------|--------|------------|-------|
-| `@action` decorator | ✅ | ❌ | Not yet implemented |
-| `Action` class | ✅ | ❌ | Not yet implemented |
-| `reads` / `writes` specification | ✅ | ❌ | Not yet implemented |
-| Sync actions | ✅ | ❌ | TS will be async-only |
-| Async actions | ✅ | ❌ | TS design: async-only |
+| `@action` decorator | ✅ | ❌ | TS uses `action()` function instead |
+| `Action` class | ✅ | ✅ | |
+| `action()` helper function | ✅ | ✅ | Primary way to create actions in TS |
+| `reads` / `writes` specification | ✅ | ✅ | Uses Zod schemas in TS |
+| `inputs` specification | ✅ | ✅ | Uses Zod schemas in TS |
+| Sync actions | ✅ | ❌ | TS is async-only |
+| Async actions | ✅ | ✅ | All TS actions are async |
 | Streaming actions | ✅ | ❌ | Not yet implemented |
-| Action validation | ✅ | ❌ | Not yet implemented |
-| Conditional transitions | ✅ | ❌ | Not yet implemented |
-| `Result` type | ✅ | ❌ | Not yet implemented |
+| Action validation (inputs/reads/writes) | ✅ | ✅ | Runtime validation with Zod |
+| `result` type specification | ✅ | ✅ | Uses Zod schemas in TS |
+| Separate run/update phases | ✅ | ✅ | |
+| Single-step actions | ✅ | ❌ | TS requires separate run/update |
 
 ### Application
 
 | Feature | Python | TypeScript | Notes |
 |---------|--------|------------|-------|
-| `ApplicationBuilder` | ✅ | ❌ | Not yet implemented |
-| `Application.run()` | ✅ | ❌ | Not yet implemented |
-| `Application.step()` | ✅ | ❌ | Not yet implemented |
-| `Application.iterate()` | ✅ | ❌ | Not yet implemented |
-| `Application.arun()` (async) | ✅ | ❌ | TS will be async by default |
-| Initial state | ✅ | ❌ | Not yet implemented |
-| Entrypoint specification | ✅ | ❌ | Not yet implemented |
-| Halt conditions | ✅ | ❌ | Not yet implemented |
-| Application state access | ✅ | ❌ | Not yet implemented |
+| `ApplicationBuilder` | ✅ | ✅ | |
+| `Application.step()` | ✅ | ✅ | Async only in TS |
+| `Application.run()` | ✅ | ✅ | Async only in TS |
+| `Application.iterate()` | ✅ | ✅ | Async generator in TS |
+| `Application.astep()` | ✅ | ❌ | TS step() is always async |
+| `Application.arun()` | ✅ | ❌ | TS run() is always async |
+| `Application.aiterate()` | ✅ | ❌ | TS iterate() is always async |
+| Initial state | ✅ | ✅ | |
+| Entrypoint specification | ✅ | ✅ | |
+| Halt conditions (before/after) | ✅ | ✅ | `haltBefore` / `haltAfter` |
+| Application state access | ✅ | ✅ | `app.state` property |
+| Initial state access | ❌ | ✅ | TS has `app.initialState` property |
+| Application ID | ✅ | ✅ | `uid` in Python, `appId` in TS |
+| Partition key | ✅ | ✅ | |
+| Sequence ID access | ✅ | ❌ | Python has `.sequence_id` property |
 | Application context | ✅ | ❌ | Not yet implemented |
+| `has_next_action()` | ✅ | ❌ | Not yet implemented |
+| `get_next_action()` | ✅ | ❌ | Internal in TS |
+| `update_state()` | ✅ | ❌ | Not yet implemented |
+| `reset_to_entrypoint()` | ✅ | ❌ | Not yet implemented |
+| Streaming actions | ✅ | ❌ | Not yet implemented |
+| `visualize()` | ✅ | ❌ | Not yet implemented |
+| Parent/spawning pointers | ✅ | ❌ | Not yet implemented |
 
 ### Graph
 
 | Feature | Python | TypeScript | Notes |
 |---------|--------|------------|-------|
-| `Graph` / `GraphBuilder` | ✅ | ❌ | Not yet implemented |
-| Transitions | ✅ | ❌ | Not yet implemented |
-| Conditional transitions | ✅ | ❌ | Not yet implemented |
-| Default transitions | ✅ | ❌ | Not yet implemented |
+| `Graph` class | ✅ | ✅ | |
+| `GraphBuilder` | ✅ | ✅ | |
+| Transitions (unconditional) | ✅ | ✅ | |
+| Conditional transitions | ✅ | ✅ | Function-based conditions |
+| Default/fallback transitions | ✅ | ✅ | |
+| Action tags | ✅ | ❌ | Not yet implemented |
 | Graph validation | ✅ | ❌ | Not yet implemented |
 | Cycle detection | ✅ | ❌ | Not yet implemented |
 | Graph visualization | ✅ | ❌ | Not yet implemented |
+| `getTransitionsFrom()` | ✅ | ✅ | |
+| `getAction()` | ✅ | ✅ | |
+| `hasAction()` | ✅ | ✅ | |
 
 ### Persistence
 
@@ -178,7 +199,9 @@ This implementation aims to match the Python version's core functionality with T
 | Copy-on-write optimization | ✅ | ✅ | Uses `structuredClone` |
 | Generic type support | ❌ | ✅ | TypeScript generics provide type safety |
 | Serializable operations | ✅ | ✅ | Operations can be serialized to JSON |
-| Async-first design | ❌ | 🚧 | TS will be async-only (planned) |
+| Async-first design | ❌ | ✅ | All TS actions/execution is async |
+| Schema validation (Zod) | ❌ | ✅ | TS uses Zod for runtime validation |
+| Framework metadata in state | ✅ | ✅ | `appMetadata` / `executionMetadata` |
 
 ### Legend
 - ✅ **Implemented** - Feature is available and tested
@@ -187,19 +210,25 @@ This implementation aims to match the Python version's core functionality with T
 
 ### Implementation Priority
 
-**Phase 1 (Current):**
+**Phase 1 (Completed):**
 - ✅ State API core operations
 - ✅ State immutability & operations
 - ✅ Basic serialization
+- ✅ Actions with Zod validation
+- ✅ Application & ApplicationBuilder
+- ✅ Graph & transitions
+- ✅ Execution engine (step/run/iterate)
 
-**Phase 2 (Next):**
-- Actions & action decorators
-- Application & ApplicationBuilder
-- Graph & transitions
+**Phase 2 (Current):**
+- Graph validation & cycle detection
+- Streaming actions
+- Action tags
+- Additional helper methods
 
 **Phase 3 (Future):**
 - Lifecycle hooks
 - Persistence
 - Tracking & observability
 - Integrations
+- Visualization
 

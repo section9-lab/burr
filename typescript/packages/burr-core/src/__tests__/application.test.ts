@@ -103,16 +103,6 @@ describe('ApplicationBuilder', () => {
   });
 
   describe('withState', () => {
-    test('sets the initial state', () => {
-      const builder = new ApplicationBuilder()
-        .withGraph(testGraph)
-        .withEntrypoint('action1')
-        .withState(testState);
-      
-      const app = builder.build();
-      expect(app.initialState).toBe(testState);
-    });
-
     test('throws if state already set', () => {
       const builder = new ApplicationBuilder()
         .withGraph(testGraph)
@@ -145,7 +135,6 @@ describe('ApplicationBuilder', () => {
       expect(app).toBeInstanceOf(Application);
       expect(app.graph).toBe(testGraph);
       expect(app.entrypoint).toBe('action1');
-      expect(app.initialState).toBe(testState);
     });
 
     test('throws if graph not set', () => {
@@ -234,7 +223,6 @@ describe('Application', () => {
 
     expect(app.graph).toBe(graph);
     expect(app.entrypoint).toBe('copyAction');
-    expect(app.initialState).toBe(state);
   });
 });
 
