@@ -26,7 +26,7 @@ allowed-tools: Read, Grep, Glob, Bash(python *, burr, pip *)
 
 # Apache Burr Development Assistant
 
-You are an expert in Apache Burr (incubating), a Python framework for building stateful applications using state machines. When this skill is active, help developers write clean, idiomatic Burr code following best practices.
+You are an expert in Apache Burr (incubating), a Python framework for building stateful applications using state machines. When this skill is active, help developers write clean, idiomatic Apache Burr code following best practices.
 
 ## Core Expertise
 
@@ -51,7 +51,7 @@ Refer to these supporting files for detailed information:
 
 ### 1. Building New Applications
 
-When users want to create a Burr application:
+When users want to create an Apache Burr application:
 
 1. **Start with actions** - Define `@action` decorated functions
 2. **Use ApplicationBuilder** - Follow the builder pattern
@@ -62,12 +62,20 @@ When users want to create a Burr application:
 Example skeleton:
 ```python
 from burr.core import action, State, ApplicationBuilder, default
+from typing import Tuple
 
 @action(reads=["input_key"], writes=["output_key"])
-def my_action(state: State) -> State:
-    # Your logic here
-    result = process(state["input_key"])
-    return state.update(output_key=result)
+def my_action(state: State) -> Tuple[dict, State]:
+    # 1. Read from state using bracket notation
+    input_value = state["input_key"]
+
+    # 2. Your logic here
+    output_value = process(input_value)
+
+    # 3. Return tuple: (result_dict, new_state)
+    # - result_dict: exposed to callers and tracking
+    # - new_state: returned by state.update() (creates new State object)
+    return {"output_key": output_value}, state.update(output_key=output_value)
 
 app = (
     ApplicationBuilder()
@@ -79,10 +87,11 @@ app = (
     .build()
 )
 
-result = app.run(halt_after=["next_action"])
+# Run returns (action, result_dict, final_state)
+action, result, state = app.run(halt_after=["next_action"])
 ```
 
-### 2. Reviewing Burr Code
+### 2. Reviewing Apache Burr Code
 
 When reviewing code:
 - ✅ Check that actions declare correct `reads` and `writes`
@@ -95,7 +104,7 @@ When reviewing code:
 
 ### 3. Explaining Concepts
 
-When explaining Burr features:
+When explaining Apache Burr features:
 - Use concrete examples from [examples.md](examples.md)
 - Reference the appropriate section in [api-reference.md](api-reference.md)
 - Show both simple and complex variations
@@ -135,23 +144,147 @@ async def async_action(state: State) -> State:
 
 **Parallel execution**:
 ```python
-from burr.core import graph
+from burr.core.parallelism import MapStates, RunnableGraph
 
-graph = (
-    graph.GraphBuilder()
-    .with_actions(action1, action2, action3)
-    .with_transitions(
-        ("start", "action1"),
-        ("start", "action2"),  # These run in parallel
-        (["action1", "action2"], "action3")
+# Apply same action to multiple states
+class TestMultiplePrompts(MapStates):
+    def action(self, state: State, inputs: dict) -> Action | Callable | RunnableGraph:
+        return query_llm.with_name("query_llm")
+
+    def states(self, state: State, context: ApplicationContext, inputs: dict):
+        for prompt in state["prompts"]:
+            yield state.update(prompt=prompt)
+
+    def reduce(self, state: State, states):
+        results = [s["result"] for s in states]
+        return state.update(all_results=results)
+
+    @property
+    def reads(self) -> list[str]:
+        return ["prompts"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["all_results"]
+
+app = ApplicationBuilder().with_actions(
+    multi_prompt=TestMultiplePrompts()
+).build()
+```
+
+## State Management Patterns
+
+### Regular State (Dictionary-Based)
+
+**Reading from state:**
+```python
+# Use bracket notation to access state values
+value = state["key"]
+chat_history = state["chat_history"]
+counter = state["counter"]
+```
+
+**Updating state:**
+State is immutable. Methods return NEW State objects:
+```python
+# state.update() - set/update keys, returns new State
+new_state = state.update(counter=5, name="Alice")
+
+# state.append() - append to lists, returns new State
+new_state = state.append(chat_history={"role": "user", "content": "hi"})
+
+# state.increment() - increment numbers, returns new State
+new_state = state.increment(counter=1)
+
+# Chaining - each method returns a State, enabling fluent patterns
+new_state = state.update(prompt=prompt).append(chat_history=item)
+```
+
+**Action return pattern:**
+Actions return `Tuple[dict, State]`:
+```python
+from typing import Tuple
+
+@action(reads=["prompt"], writes=["response", "chat_history"])
+def ai_respond(state: State) -> Tuple[dict, State]:
+    # 1. Read from state
+    prompt = state["prompt"]
+
+    # 2. Process
+    response = call_llm(prompt)
+
+    # 3. Return (result_dict, new_state)
+    # result_dict is exposed to callers/tracking
+    # new_state is the updated immutable state
+    return {"response": response}, state.update(response=response).append(
+        chat_history={"role": "assistant", "content": response}
     )
+```
+
+**Shorthand (also valid):**
+```python
+@action(reads=["counter"], writes=["counter"])
+def increment(state: State) -> State:
+    result = {"counter": state["counter"] + 1}
+    # Framework infers result from state updates
+    return state.update(**result)
+```
+
+### Pydantic Typed State (Different Pattern)
+
+**Define state model:**
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class ApplicationState(BaseModel):
+    prompt: Optional[str] = Field(default=None, description="User prompt")
+    response: Optional[str] = Field(default=None, description="AI response")
+    chat_history: list[dict] = Field(default_factory=list)
+```
+
+**Configure application:**
+```python
+from burr.integrations.pydantic import PydanticTypingSystem
+
+app = (
+    ApplicationBuilder()
+    .with_typing(PydanticTypingSystem(ApplicationState))
+    .with_state(ApplicationState())
     .build()
 )
 ```
 
+**Access typed state:**
+```python
+# Use attribute access (not bracket notation)
+@action.pydantic(reads=["prompt"], writes=["response"])
+def ai_respond(state: ApplicationState) -> ApplicationState:
+    # 1. Read using attributes
+    prompt = state.prompt
+
+    # 2. Process
+    response = call_llm(prompt)
+
+    # 3. Mutate in-place and return state
+    # (Mutation happens on internal copy)
+    state.response = response
+    return state
+```
+
+**Key differences:**
+
+| Aspect | Regular State | Pydantic Typed State |
+|--------|---------------|---------------------|
+| **Access** | `state["key"]` | `state.key` |
+| **Return** | `Tuple[dict, State]` | `ApplicationState` |
+| **Decorator** | `@action(reads=[], writes=[])` | `@action.pydantic(reads=[], writes=[])` |
+| **Updates** | Must use `.update()`, `.append()` | In-place mutation |
+| **Type Safety** | Runtime only | IDE support + validation |
+
 ## Code Quality Standards
 
-When writing or reviewing Burr code:
+When writing or reviewing Apache Burr code:
 
 1. **Type annotations**: Always use type hints for state and action parameters
 2. **Action purity**: Actions should be deterministic given the same state
@@ -172,7 +305,7 @@ When writing or reviewing Burr code:
 
 ## Integration Scenarios
 
-Burr works well with:
+Apache Burr works well with:
 - **LLM frameworks**: OpenAI, Anthropic, Langchain, LlamaIndex
 - **Apache Hamilton**: For DAG execution within actions
 - **Streaming**: Streamlit, FastAPI, gradio for UI
@@ -190,7 +323,7 @@ Burr works well with:
 
 1. **State machines make complex logic simple** - Encourage users to think in terms of states and transitions
 2. **Observability is built-in** - Always recommend using the tracking UI
-3. **Framework agnostic** - Burr doesn't dictate how to build models or query APIs
+3. **Framework agnostic** - Apache Burr doesn't dictate how to build models or query APIs
 4. **Testability first** - Actions are pure functions that are easy to test
 5. **Production ready** - Persistence, hooks, and tracking enable production deployment
 
@@ -209,4 +342,4 @@ Burr works well with:
 - Look at tests in `tests/` for usage patterns
 - Reference official documentation at https://burr.apache.org/
 
-Remember: Burr is about making stateful applications easy to build, understand, and debug. Focus on clear state machines and leverage the built-in observability tools.
+Remember: Apache Burr is about making stateful applications easy to build, understand, and debug. Focus on clear state machines and leverage the built-in observability tools.

@@ -19,7 +19,7 @@ under the License.
 
 # Apache Burr Code Examples
 
-Common patterns and working examples for building Burr applications.
+Common patterns and working examples for building Apache Burr applications.
 
 ## Table of Contents
 1. [Simple Counter](#simple-counter)
@@ -32,6 +32,9 @@ Common patterns and working examples for building Burr applications.
 8. [Parallel Execution](#parallel-execution)
 9. [State Persistence](#state-persistence)
 10. [RAG Pattern](#rag-pattern)
+11. [Using Action Binding](#using-action-binding)
+12. [Testing Actions](#testing-actions)
+13. [Pydantic Typed State](#pydantic-typed-state)
 
 ---
 
@@ -44,11 +47,16 @@ from burr.core import action, State, ApplicationBuilder, default, expr
 
 @action(reads=["counter"], writes=["counter"])
 def increment(state: State) -> State:
-    return state.update(counter=state["counter"] + 1)
+    # Read from state using bracket notation
+    result = {"counter": state["counter"] + 1}
+    # State methods return new State objects
+    return state.update(**result)
 
 @action(reads=["counter"], writes=["result"])
 def finish(state: State) -> State:
-    return state.update(result=f"Final count: {state['counter']}")
+    # Access state values with state["key"]
+    result = {"result": f"Final count: {state['counter']}"}
+    return state.update(**result)
 
 app = (
     ApplicationBuilder()
@@ -62,7 +70,8 @@ app = (
     .build()
 )
 
-_, _, final_state = app.run(halt_after=["finish"])
+# run() returns (action, result_dict, final_state)
+action, result, final_state = app.run(halt_after=["finish"])
 print(final_state["result"])  # "Final count: 10"
 ```
 
@@ -72,25 +81,31 @@ Classic chatbot pattern with user input and AI response.
 
 ```python
 from burr.core import action, State, ApplicationBuilder, default
+from typing import Tuple
 
 @action(reads=[], writes=["chat_history", "prompt"])
-def human_input(state: State, prompt: str) -> State:
+def human_input(state: State, prompt: str) -> Tuple[dict, State]:
     """Capture user input."""
+    # Build chat item
     chat_item = {"role": "user", "content": prompt}
-    return (
-        state.update(prompt=prompt)
-        .append(chat_history=chat_item)
-    )
+
+    # Return (result_dict, new_state)
+    # Chain state updates: update() returns State, then append() returns new State
+    return {"prompt": prompt}, state.update(prompt=prompt).append(chat_history=chat_item)
 
 @action(reads=["chat_history"], writes=["response", "chat_history"])
-def ai_response(state: State) -> State:
+def ai_response(state: State) -> Tuple[dict, State]:
     """Generate AI response."""
-    # Call your LLM here
-    response = call_llm(state["chat_history"])
+    # Read from state using bracket notation
+    chat_history = state["chat_history"]
+
+    # Call your LLM
+    response = call_llm(chat_history)
     chat_item = {"role": "assistant", "content": response}
-    return (
-        state.update(response=response)
-        .append(chat_history=chat_item)
+
+    # Return result and chained state updates
+    return {"response": response}, state.update(response=response).append(
+        chat_history=chat_item
     )
 
 app = (
@@ -107,11 +122,13 @@ app = (
 )
 
 # Run one turn of conversation
-_, _, state = app.run(
+# run() returns (action, result_dict, final_state)
+action, result, state = app.run(
     halt_after=["ai_response"],
     inputs={"prompt": "Hello, how are you?"}
 )
-print(state["response"])
+print(result["response"])  # Access result from result dict
+print(state["chat_history"])  # Access state using bracket notation
 ```
 
 ## Multi-Step Workflow
@@ -332,10 +349,12 @@ for state in app.stream_result(halt_after=["streaming_llm"]):
 
 ## Parallel Execution
 
-Execute multiple actions in parallel.
+Execute multiple actions in parallel using Apache Burr's parallelism APIs.
 
 ```python
-from burr.core import graph
+from burr.core.parallelism import MapActions, RunnableGraph
+from burr.core import action, State, ApplicationContext
+from typing import Dict, Any
 
 @action(reads=["text"], writes=["sentiment"])
 def analyze_sentiment(state: State) -> State:
@@ -352,44 +371,42 @@ def extract_keywords(state: State) -> State:
     keywords = get_keywords(state["text"])
     return state.update(keywords=keywords)
 
-@action(reads=["sentiment", "entities", "keywords"], writes=["analysis"])
-def combine_results(state: State) -> State:
-    """Combine all analysis results."""
-    analysis = {
-        "sentiment": state["sentiment"],
-        "entities": state["entities"],
-        "keywords": state["keywords"]
-    }
-    return state.update(analysis=analysis)
+# Run multiple actions in parallel on the same state
+class ParallelTextAnalysis(MapActions):
+    def actions(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        yield analyze_sentiment.with_name("sentiment_analysis")
+        yield extract_entities.with_name("entity_extraction")
+        yield extract_keywords.with_name("keyword_extraction")
 
-# Use graph builder for parallel execution
-g = (
-    graph.GraphBuilder()
-    .with_actions(
-        analyze_sentiment,
-        extract_entities,
-        extract_keywords,
-        combine_results
-    )
-    .with_transitions(
-        # These three run in parallel
-        ("start", "analyze_sentiment"),
-        ("start", "extract_entities"),
-        ("start", "extract_keywords"),
-        # Wait for all three to complete
-        (
-            ["analyze_sentiment", "extract_entities", "extract_keywords"],
-            "combine_results"
-        )
-    )
-    .build()
-)
+    def state(self, state: State, inputs: Dict[str, Any]) -> State:
+        return state  # Pass state as-is to all actions
+
+    def reduce(self, state: State, states) -> State:
+        """Combine all analysis results."""
+        analysis = {}
+        for sub_state in states:
+            if "sentiment" in sub_state:
+                analysis["sentiment"] = sub_state["sentiment"]
+            if "entities" in sub_state:
+                analysis["entities"] = sub_state["entities"]
+            if "keywords" in sub_state:
+                analysis["keywords"] = sub_state["keywords"]
+        return state.update(analysis=analysis)
+
+    @property
+    def reads(self) -> list[str]:
+        return ["text"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["analysis"]
 
 app = (
     ApplicationBuilder()
-    .with_graph(g)
+    .with_actions(parallel_analysis=ParallelTextAnalysis())
+    .with_transitions(("parallel_analysis", "parallel_analysis"))  # Or continue to next action
     .with_state(text="Sample text to analyze")
-    .with_entrypoint("start")
+    .with_entrypoint("parallel_analysis")
     .build()
 )
 ```
@@ -622,8 +639,84 @@ async def test_async_action():
 
 ---
 
-For more examples, see the `examples/` directory in the Burr repository:
+## Pydantic Typed State
+
+Use Pydantic models for type-safe state with IDE support and validation.
+
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+from burr.core import action, ApplicationBuilder
+from burr.integrations.pydantic import PydanticTypingSystem
+
+# Define state schema with Pydantic
+class ChatState(BaseModel):
+    prompt: Optional[str] = Field(default=None, description="User prompt")
+    response: Optional[str] = Field(default=None, description="AI response")
+    chat_history: list[dict] = Field(default_factory=list, description="Conversation history")
+
+# Use @action.pydantic decorator
+@action.pydantic(reads=[], writes=["prompt", "chat_history"])
+def human_input_typed(state: ChatState, prompt: str) -> ChatState:
+    """Capture user input with typed state."""
+    # Access state as attributes (not brackets)
+    state.prompt = prompt
+    state.chat_history.append({"role": "user", "content": prompt})
+    # Return the state object directly (not tuple)
+    return state
+
+@action.pydantic(reads=["chat_history"], writes=["response", "chat_history"])
+def ai_response_typed(state: ChatState) -> ChatState:
+    """Generate AI response with typed state."""
+    # Read using attribute access
+    chat_history = state.chat_history
+
+    # Process
+    response = call_llm(chat_history)
+
+    # Mutate in-place (on internal copy) and return
+    state.response = response
+    state.chat_history.append({"role": "assistant", "content": response})
+    return state
+
+# Configure application with typing system
+app = (
+    ApplicationBuilder()
+    .with_typing(PydanticTypingSystem(ChatState))
+    .with_actions(human_input_typed, ai_response_typed)
+    .with_transitions(
+        ("human_input_typed", "ai_response_typed"),
+        ("ai_response_typed", "human_input_typed")
+    )
+    .with_state(ChatState())  # Initialize with Pydantic model
+    .with_entrypoint("human_input_typed")
+    .build()
+)
+
+# Run and access typed state
+action, result, state = app.run(
+    halt_after=["ai_response_typed"],
+    inputs={"prompt": "Hello!"}
+)
+
+# Access state data through .data property
+print(state.data.response)  # IDE autocomplete!
+print(state.data.chat_history)
+```
+
+**Key differences from regular state:**
+- Use `@action.pydantic` decorator instead of `@action`
+- State parameter type is your Pydantic model (`ChatState`), not `State`
+- Access with attributes (`state.prompt`) not brackets (`state["prompt"]`)
+- Return state object directly, not `Tuple[dict, State]`
+- Mutations happen in-place (on internal copy)
+- Full IDE support: autocomplete, type checking, validation
+
+---
+
+For more examples, see the `examples/` directory in the Apache Burr repository:
 - `examples/hello-world-counter/`
 - `examples/multi-modal-chatbot/`
 - `examples/conversational-rag/`
 - `examples/email-assistant/`
+- `examples/typed-state/`

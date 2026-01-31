@@ -19,7 +19,7 @@ under the License.
 
 # Apache Burr Troubleshooting Guide
 
-Common issues and solutions when working with Burr.
+Common issues and solutions when working with Apache Burr.
 
 ## Installation Issues
 
@@ -215,7 +215,19 @@ def increment(state: State) -> State:
 # ✅ Good - returns updated state
 @action(reads=["counter"], writes=["counter"])
 def increment(state: State) -> State:
-    return state.update(counter=state["counter"] + 1)
+    result = {"counter": state["counter"] + 1}
+    return state.update(**result)
+```
+
+**Note:** You can return just `State` (shorthand) or `Tuple[dict, State]` (explicit):
+```python
+from typing import Tuple
+
+# Explicit pattern (recommended for clarity)
+@action(reads=["counter"], writes=["counter"])
+def increment(state: State) -> Tuple[dict, State]:
+    result = {"counter": state["counter"] + 1}
+    return result, state.update(counter=result["counter"])
 ```
 
 2. **Mutating state directly:**
@@ -574,19 +586,37 @@ Application takes too long to execute
 
 1. **Use parallel execution:**
 ```python
-# Run independent actions in parallel
-from burr.core import graph
+# Run independent actions in parallel using MapActions
+from burr.core.parallelism import MapActions
+from burr.core import ApplicationContext
+from typing import Dict, Any
 
-g = (
-    graph.GraphBuilder()
-    .with_actions(action1, action2, action3)
-    .with_transitions(
-        # These run in parallel
-        ("start", ["action1", "action2"]),
-        (["action1", "action2"], "action3")
-    )
-    .build()
-)
+class ParallelActions(MapActions):
+    def actions(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        yield action1.with_name("action1")
+        yield action2.with_name("action2")
+
+    def state(self, state: State, inputs: Dict[str, Any]) -> State:
+        return state
+
+    def reduce(self, state: State, states) -> State:
+        results = [s for s in states]
+        return state.update(parallel_results=results)
+
+    @property
+    def reads(self) -> list[str]:
+        return []
+
+    @property
+    def writes(self) -> list[str]:
+        return ["parallel_results"]
+
+app = ApplicationBuilder().with_actions(
+    parallel=ParallelActions(),
+    action3=action3
+).with_transitions(
+    ("parallel", "action3")
+).build()
 ```
 
 2. **Profile actions:**
@@ -725,7 +755,7 @@ logging.basicConfig(level=logging.DEBUG)
 ```
 
 When asking for help, include:
-- Burr version: `pip show burr`
+- Apache Burr version: `pip show burr`
 - Python version: `python --version`
 - Minimal code example that reproduces the issue
 - Full error message and traceback

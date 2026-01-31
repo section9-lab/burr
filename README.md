@@ -158,7 +158,7 @@ cp -r /path/to/burr/.claude/skills/burr ~/.claude/skills/
 
 Then just ask Claude naturally: *"Help me build a Burr application"* or use `/burr` for specific help.
 
-See [CLAUDE_SKILL.md](CLAUDE_SKILL.md) for installation details and the [skill documentation](https://burr.apache.org/getting_started/claude-skill) for full usage guide.
+See [.claude/skills/burr/README.md](.claude/skills/burr/README.md) for installation details and the [skill documentation](https://burr.apache.org/getting_started/claude-skill) for full usage guide.
 
 ## 📃 Comparison against common frameworks
 

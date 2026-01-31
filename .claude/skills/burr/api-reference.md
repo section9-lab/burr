@@ -19,7 +19,7 @@ under the License.
 
 # Apache Burr API Reference
 
-This is a quick reference for the most commonly used Burr APIs. For complete documentation, see https://burr.apache.org/
+This is a quick reference for the most commonly used Apache Burr APIs. For complete documentation, see https://burr.apache.org/
 
 ## Core Imports
 
@@ -134,28 +134,72 @@ if "key" in state:
 
 ### Updating State
 
-State is immutable. Use these methods to create updated copies:
+State is **immutable**. All methods return NEW State objects:
 
 ```python
 # Update single or multiple keys
 new_state = state.update(counter=5, name="Alice")
 
-# Append to a list
+# Append to a list (creates list if doesn't exist)
 new_state = state.append(messages={"role": "user", "content": "hello"})
+
+# Increment numbers
+new_state = state.increment(counter=1)
+
+# Extend lists with multiple items
+new_state = state.extend(tags=["tag1", "tag2", "tag3"])
 
 # Wipe state (keep only specified keys)
 new_state = state.wipe(keep=["counter"])
+
+# Chain operations (each returns State)
+new_state = state.update(prompt=prompt).append(history=item).increment(count=1)
 
 # Update with dictionary
 new_state = state.update(**{"key": "value"})
 ```
 
+### Using State in Actions
+
+Actions return `Tuple[dict, State]`:
+
+```python
+from typing import Tuple
+
+@action(reads=["input"], writes=["output"])
+def my_action(state: State) -> Tuple[dict, State]:
+    # 1. Read from state
+    input_value = state["input"]
+
+    # 2. Process
+    output_value = process(input_value)
+
+    # 3. Return (result_dict, new_state)
+    return {"output": output_value}, state.update(output=output_value)
+```
+
+The result dict is exposed to callers and tracking systems. The new state flows to the next action.
+
+**Shorthand (also valid):**
+```python
+@action(reads=["counter"], writes=["counter"])
+def increment(state: State) -> State:
+    result = {"counter": state["counter"] + 1}
+    return state.update(**result)  # Framework infers result
+```
+
 ### State Methods
 
-- `.update(**kwargs) -> State`: Update one or more keys
-- `.append(**kwargs) -> State`: Append to list values
+- `.update(**kwargs) -> State`: Set/update one or more keys
+- `.append(**kwargs) -> State`: Append to list values (creates list if needed)
+- `.extend(**kwargs) -> State`: Extend lists with multiple items
+- `.increment(**kwargs) -> State`: Increment integer values
 - `.wipe(keep: List[str] = None, delete: List[str] = None) -> State`: Remove keys
+- `.merge(other: State) -> State`: Merge two states (other wins on conflicts)
+- `.subset(*keys: str) -> State`: Return new State with only specified keys
 - `.get(key, default=None) -> Any`: Get value with default
+- `.get_all() -> dict`: Get all state as dictionary
+- `.serialize() -> dict`: Serialize state to JSON-compatible dict
 - `.subset(*keys) -> State`: Create new state with only specified keys
 
 ## ApplicationBuilder
@@ -291,8 +335,10 @@ Transition from multiple sources to multiple targets:
 # Multiple sources to one target
 (["action1", "action2"], "action3")
 
-# One source to multiple targets (for parallelism)
+# One source to multiple targets (conditional branching - only one executes)
 ("start", ["parallel1", "parallel2"])
+
+# For actual parallelism, use MapActions/MapStates/MapActionsAndStates
 ```
 
 ## Application
@@ -346,6 +392,179 @@ app.visualize(
     include_conditions=True,
     view=True,  # Auto-open the file
     format="png"  # or "pdf", "svg"
+)
+```
+
+## Parallelism
+
+Apache Burr provides high-level APIs for parallel execution of actions or subgraphs.
+
+### MapStates
+
+Apply the same action to multiple state variations.
+
+```python
+from burr.core.parallelism import MapStates
+from burr.core import action, State, ApplicationContext
+from typing import Dict, Any
+
+@action(reads=["prompt"], writes=["result"])
+def query_llm(state: State) -> State:
+    result = call_llm(state["prompt"])
+    return state.update(result=result)
+
+class TestMultiplePrompts(MapStates):
+    def action(self, state: State, inputs: Dict[str, Any]):
+        return query_llm.with_name("query_llm")
+
+    def states(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        for prompt in state["prompts"]:
+            yield state.update(prompt=prompt)
+
+    def reduce(self, state: State, states):
+        results = [s["result"] for s in states]
+        return state.update(all_results=results)
+
+    @property
+    def reads(self) -> list[str]:
+        return ["prompts"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["all_results"]
+```
+
+### MapActions
+
+Apply different actions to the same state.
+
+```python
+from burr.core.parallelism import MapActions
+
+class TestMultipleLLMs(MapActions):
+    def actions(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        yield query_gpt4.with_name("gpt4")
+        yield query_claude.with_name("claude")
+        yield query_o1.with_name("o1")
+
+    def state(self, state: State, inputs: Dict[str, Any]) -> State:
+        return state  # Pass same state to all actions
+
+    def reduce(self, state: State, states):
+        results = [s["result"] for s in states]
+        return state.update(all_results=results)
+
+    @property
+    def reads(self) -> list[str]:
+        return ["prompt"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["all_results"]
+```
+
+### MapActionsAndStates
+
+Run all combinations of actions and states (cartesian product).
+
+```python
+from burr.core.parallelism import MapActionsAndStates
+
+class TestModelsAndPrompts(MapActionsAndStates):
+    def actions(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        for model in ["gpt-4", "claude", "o1"]:
+            yield query_llm.bind(model=model).with_name(f"query_{model}")
+
+    def states(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        for prompt in state["prompts"]:
+            yield state.update(prompt=prompt)
+
+    def reduce(self, state: State, states):
+        results = []
+        for s in states:
+            results.append({"model": s["model"], "prompt": s["prompt"], "result": s["result"]})
+        return state.update(all_results=results)
+
+    @property
+    def reads(self) -> list[str]:
+        return ["prompts"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["all_results"]
+```
+
+### RunnableGraph
+
+Wrap a graph for use as a subgraph in parallel execution.
+
+```python
+from burr.core.parallelism import RunnableGraph
+from burr.core.graph import GraphBuilder
+
+graph = (
+    GraphBuilder()
+    .with_actions(action1, action2, action3)
+    .with_transitions(
+        ("action1", "action2"),
+        ("action2", "action3")
+    )
+    .build()
+)
+
+runnable = RunnableGraph(
+    graph=graph,
+    entrypoint="action1",
+    halt_after=["action3"]
+)
+
+# Use in MapStates or MapActions
+class RunSubgraphs(MapStates):
+    def action(self, state: State, inputs: Dict[str, Any]):
+        return runnable  # Return the RunnableGraph
+
+    def states(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        for item in state["items"]:
+            yield state.update(current_item=item)
+
+    def reduce(self, state: State, states):
+        results = [s["final_result"] for s in states]
+        return state.update(all_results=results)
+
+    @property
+    def reads(self) -> list[str]:
+        return ["items"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["all_results"]
+```
+
+### Executors
+
+Control how parallel tasks are executed.
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+# Use multithreading (default)
+app = (
+    ApplicationBuilder()
+    .with_parallel_executor(ThreadPoolExecutor(max_workers=10))
+    .with_actions(parallel_action=MyParallelAction())
+    .build()
+)
+
+# For Ray-based distributed execution
+from burr.integrations.ray import RayExecutor
+import ray
+
+ray.init()
+app = (
+    ApplicationBuilder()
+    .with_parallel_executor(RayExecutor())
+    .with_actions(parallel_action=MyParallelAction())
+    .build()
 )
 ```
 
@@ -507,25 +726,71 @@ app = (
 app.run(halt_after=["process"], inputs={"user_prompt": "Hello"})
 ```
 
-## Type Safety
+## Type Safety with Pydantic
 
-### Pydantic Integration
+### Pydantic Typed State
 
+Use Pydantic models for type-safe state with IDE support, autocomplete, and validation.
+
+**Define state model:**
 ```python
-from burr.core import action
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 
-class InputModel(BaseModel):
-    name: str
-    age: int
-
-class OutputModel(BaseModel):
-    greeting: str
-
-@action.pydantic(reads=[], writes=["greeting"])
-def greet(state: State, inputs: InputModel) -> OutputModel:
-    return OutputModel(greeting=f"Hello {inputs.name}, age {inputs.age}")
+class ApplicationState(BaseModel):
+    prompt: Optional[str] = Field(default=None, description="User prompt")
+    response: Optional[str] = Field(default=None, description="AI response")
+    count: int = Field(default=0, description="Request count")
 ```
+
+**Configure application:**
+```python
+from burr.integrations.pydantic import PydanticTypingSystem
+
+app = (
+    ApplicationBuilder()
+    .with_typing(PydanticTypingSystem(ApplicationState))
+    .with_state(ApplicationState())
+    .build()
+)
+```
+
+**Use in actions:**
+```python
+@action.pydantic(reads=["prompt"], writes=["response"])
+def process(state: ApplicationState, llm_client) -> ApplicationState:
+    # Access state as attributes (not brackets)
+    user_prompt = state.prompt
+
+    # Process
+    response = llm_client.generate(user_prompt)
+
+    # Mutate in-place and return (mutation on internal copy)
+    state.response = response
+    return state
+```
+
+**Access typed state after run:**
+```python
+action, result, state = app.run(halt_after=["process"])
+
+# Use .data property to access Pydantic model
+print(state.data.response)  # IDE autocomplete works!
+print(state.data.count)
+```
+
+### Key Differences: Regular vs Pydantic State
+
+| Feature | Regular State | Pydantic Typed State |
+|---------|---------------|---------------------|
+| **Definition** | `State({"key": value})` | Pydantic `BaseModel` |
+| **Access** | `state["key"]` | `state.key` |
+| **Updates** | `state.update()`, `state.append()` | In-place mutation |
+| **Return Type** | `Tuple[dict, State]` | `ApplicationState` |
+| **Decorator** | `@action(...)` | `@action.pydantic(...)` |
+| **Type Safety** | Runtime only | Compile-time + Runtime |
+| **IDE Support** | No autocomplete | Full autocomplete |
+| **Validation** | Manual | Automatic via Pydantic |
 
 ## Testing
 
@@ -561,7 +826,7 @@ def test_application():
 
 ## Quick Links
 
-- Documentation: https://burr.apache.org/
+- Apache Burr Documentation: https://burr.apache.org/
 - GitHub: https://github.com/apache/burr
-- Examples: `examples/` directory in the repository
+- Examples: `examples/` directory in the Apache Burr repository
 - Discord: https://discord.gg/6Zy2DwP4f3

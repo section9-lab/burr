@@ -19,7 +19,7 @@ under the License.
 
 # Apache Burr Design Patterns & Best Practices
 
-Architectural guidance and best practices for building production-ready Burr applications.
+Architectural guidance and best practices for building production-ready Apache Burr applications.
 
 ## Core Design Principles
 
@@ -345,10 +345,13 @@ app = (
 
 ### Pattern: Aggregating Parallel Results
 
-Run multiple analyses in parallel and combine.
+Run multiple analyses in parallel and combine using MapActions.
 
 ```python
-from burr.core import graph
+from burr.core.parallelism import MapActions
+from burr.core import action, State, ApplicationContext
+from typing import Dict, Any
+from datetime import datetime
 
 @action(reads=["document"], writes=["summary"])
 async def summarize(state: State) -> State:
@@ -365,28 +368,43 @@ async def extract_topics(state: State) -> State:
     topics = await get_topics(state["document"])
     return state.update(topics=topics)
 
-@action(reads=["summary", "sentiment", "topics"], writes=["report"])
-def create_report(state: State) -> State:
-    """Aggregate all analyses into final report."""
-    report = {
-        "summary": state["summary"],
-        "sentiment": state["sentiment"],
-        "topics": state["topics"],
-        "timestamp": datetime.now()
-    }
-    return state.update(report=report)
+class ParallelDocumentAnalysis(MapActions):
+    async def actions(self, state: State, context: ApplicationContext, inputs: Dict[str, Any]):
+        yield summarize.with_name("summarize")
+        yield analyze_sentiment.with_name("analyze_sentiment")
+        yield extract_topics.with_name("extract_topics")
 
-g = (
-    graph.GraphBuilder()
-    .with_actions(summarize, analyze_sentiment, extract_topics, create_report)
-    .with_transitions(
-        # Parallel execution
-        ("start", "summarize"),
-        ("start", "analyze_sentiment"),
-        ("start", "extract_topics"),
-        # Wait for all, then aggregate
-        (["summarize", "analyze_sentiment", "extract_topics"], "create_report")
-    )
+    async def state(self, state: State, inputs: Dict[str, Any]) -> State:
+        return state  # Pass the same state to all actions
+
+    async def reduce(self, state: State, states) -> State:
+        """Aggregate all analyses into final report."""
+        report = {"timestamp": datetime.now()}
+        async for sub_state in states:
+            if "summary" in sub_state:
+                report["summary"] = sub_state["summary"]
+            if "sentiment" in sub_state:
+                report["sentiment"] = sub_state["sentiment"]
+            if "topics" in sub_state:
+                report["topics"] = sub_state["topics"]
+        return state.update(report=report)
+
+    @property
+    def is_async(self) -> bool:
+        return True
+
+    @property
+    def reads(self) -> list[str]:
+        return ["document"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["report"]
+
+app = (
+    ApplicationBuilder()
+    .with_actions(analyze_doc=ParallelDocumentAnalysis())
+    .with_entrypoint("analyze_doc")
     .build()
 )
 ```
@@ -535,8 +553,26 @@ state.update(ve="alice@example.com")
 
 **Use parallel execution for independent operations:**
 ```python
-# Operations that don't depend on each other
-("start", ["fetch_user", "fetch_products", "fetch_orders"])
+# Use MapActions to run independent operations in parallel
+from burr.core.parallelism import MapActions
+
+class FetchAllData(MapActions):
+    def actions(self, state, context, inputs):
+        yield fetch_user.with_name("fetch_user")
+        yield fetch_products.with_name("fetch_products")
+        yield fetch_orders.with_name("fetch_orders")
+
+    def state(self, state, inputs):
+        return state
+
+    def reduce(self, state, states):
+        combined = {}
+        for s in states:
+            combined.update(s.get_all())
+        return state.update(**combined)
+
+    reads = []
+    writes = ["user", "products", "orders"]
 ```
 
 **Keep actions lightweight:**

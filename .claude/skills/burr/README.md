@@ -23,7 +23,7 @@ A comprehensive Claude Code skill for building stateful applications with Apache
 
 ## What is this?
 
-This is a Claude Code skill that teaches Claude how to help you build applications using Apache Burr. When active, Claude becomes an expert in Burr's APIs, best practices, and common patterns.
+This is a Claude Code skill that teaches Claude how to help you build applications using Apache Burr. When active, Claude becomes an expert in Apache Burr's APIs, best practices, and common patterns.
 
 ## Installation
 
@@ -80,13 +80,13 @@ Or just ask Claude naturally:
 
 This skill helps you:
 
-- **Build new Burr applications** - Get help scaffolding state machines
+- **Build new Apache Burr applications** - Get help scaffolding state machines
 - **Write actions** - Create properly structured action functions
 - **Define transitions** - Set up conditional and default transitions
-- **Add observability** - Configure tracking and the Burr UI
+- **Add observability** - Configure tracking and the Apache Burr UI
 - **Debug issues** - Troubleshoot common problems
 - **Follow best practices** - Learn recommended patterns
-- **Review code** - Get feedback on your Burr applications
+- **Review code** - Get feedback on your Apache Burr applications
 
 ## Usage Examples
 
@@ -104,14 +104,14 @@ Explicitly invoke the skill with the `/burr` command:
 
 ### Automatic Invocation
 
-Claude will automatically load the skill when it detects you're working with Burr:
+Claude will automatically load the skill when it detects you're working with Apache Burr:
 
 ```
-"I'm building a chatbot with Burr and need help with the state machine"
+"I'm building a chatbot with Apache Burr and need help with the state machine"
 
 "Why isn't my action updating the state?"
 
-"Show me an example of parallel execution in Burr"
+"Show me an example of parallel execution in Apache Burr"
 ```
 
 ## What's Included
@@ -131,7 +131,7 @@ Claude will reference these files to provide accurate, helpful guidance.
 ### Code Generation
 
 ```
-"Create a Burr application that processes user queries with RAG"
+"Create an Apache Burr application that processes user queries with RAG"
 ```
 
 Claude will generate a complete application with actions, transitions, and tracking.
@@ -139,7 +139,7 @@ Claude will generate a complete application with actions, transitions, and track
 ### Code Review
 
 ```
-"Review my Burr application for best practices"
+"Review my Apache Burr application for best practices"
 ```
 
 Claude will check for:
@@ -158,12 +158,12 @@ Claude will check for:
 Claude will:
 - Analyze your transitions
 - Suggest using `.visualize()` to see the graph
-- Recommend fixes based on common issues
+- Recommend fixes based on common issues with Apache Burr
 
 ### Learning & Examples
 
 ```
-"Show me how to implement retries in Burr"
+"Show me how to implement retries in Apache Burr"
 ```
 
 Claude will provide working examples from the examples.md reference.
@@ -201,8 +201,8 @@ The skill activates when you:
 ## Examples of What to Ask
 
 ### Getting Started
-- "Help me create my first Burr application"
-- "What's the basic structure of a Burr action?"
+- "Help me create my first Apache Burr application"
+- "What's the basic structure of an Apache Burr action?"
 - "Show me a simple chatbot example"
 
 ### Building Features
@@ -216,7 +216,7 @@ The skill activates when you:
 - "How do I debug an infinite loop?"
 
 ### Best Practices
-- "Review this code for Burr best practices"
+- "Review this code for Apache Burr best practices"
 - "Is this the right way to structure my state machine?"
 - "How should I handle errors in actions?"
 
@@ -230,9 +230,9 @@ git pull
 cp -r .claude/skills/burr ~/.claude/skills/
 ```
 
-## Integration with Burr Project
+## Integration with Apache Burr Project
 
-If you're working in the Burr repository itself, the skill is already available at `.claude/skills/burr/`.
+If you're working in the Apache Burr repository itself, the skill is already available at `.claude/skills/burr/`.
 
 ## Contributing
 
@@ -265,14 +265,14 @@ Small fixes like typos, improved examples, or clearer explanations are always we
 
 ## Related Resources
 
-- **Burr Documentation**: https://burr.apache.org/
+- **Apache Burr Documentation**: https://burr.apache.org/
 - **GitHub**: https://github.com/apache/burr
-- **Examples**: See `examples/` directory in the Burr repository
+- **Examples**: See `examples/` directory in the Apache Burr repository
 - **Discord**: https://discord.gg/6Zy2DwP4f3
 
 ## FAQ
 
-**Q: Do I need Burr installed to use this skill?**
+**Q: Do I need Apache Burr installed to use this skill?**
 
 A: No, but Claude can help you install it: `pip install "burr[start]"`
 
@@ -280,13 +280,13 @@ A: No, but Claude can help you install it: `pip install "burr[start]"`
 
 A: Yes! Edit the files in `.claude/skills/burr/` to customize behavior, add your own examples, or modify the API reference.
 
-**Q: Will this work with older versions of Burr?**
+**Q: Will this work with older versions of Apache Burr?**
 
-A: This skill is designed for current Burr versions. Some APIs may differ in older versions.
+A: This skill is designed for current Apache Burr versions. Some APIs may differ in older versions.
 
 **Q: Can I use this skill with other frameworks?**
 
-A: Yes! Burr integrates well with LangChain, LlamaIndex, Apache Hamilton, and other frameworks. The skill includes integration guidance.
+A: Yes! Apache Burr integrates well with LangChain, LlamaIndex, Apache Hamilton, and other frameworks. The skill includes integration guidance.
 
 **Q: How do I disable the skill temporarily?**
 
@@ -303,6 +303,6 @@ See the [LICENSE](../../../LICENSE) file in the root of the repository.
 
 ---
 
-Built with ❤️ by the Burr community.
+Built with ❤️ by the Apache Burr community.
 
 For help, join our [Discord](https://discord.gg/6Zy2DwP4f3) or open an issue on [GitHub](https://github.com/apache/burr/issues).
