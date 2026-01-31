@@ -287,12 +287,10 @@ def ai_respond(state: ApplicationState) -> ApplicationState:
 When writing or reviewing Apache Burr code:
 
 1. **Type annotations**: Always use type hints for state and action parameters
-2. **Action purity**: Actions should be deterministic given the same state
-3. **State immutability**: Never mutate state directly, always use `.update()` or `.append()`
-4. **Clear naming**: Action names should be verbs describing what they do
-5. **Proper reads/writes**: Declare exactly what each action reads and writes
-6. **Error handling**: Use try/except in actions and update state with error info
-7. **Testing**: Write tests that verify state transitions and action outputs
+2. **Clear naming**: Action names should be verbs describing what they do
+3. **Proper reads/writes**: Declare exactly what each action reads and writes
+4. **Error handling**: Use try/except in actions and update state with error info
+5. **Testing**: Write tests that verify state transitions and action outputs
 
 ## Common Patterns to Recommend
 
