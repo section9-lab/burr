@@ -1,0 +1,34 @@
+{
+  "name": "burr",
+  "version": "1.0.0",
+  "description": "Apache Burr development assistant - expert guidance for building stateful applications with state machines",
+  "author": "Apache Burr Contributors",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/apache/burr",
+  "homepage": "https://burr.apache.org",
+  "keywords": [
+    "burr",
+    "state-machine",
+    "llm",
+    "agent",
+    "workflow",
+    "stateful",
+    "python"
+  ],
+  "skill": {
+    "name": "burr",
+    "description": "Helps developers build stateful applications using Apache Burr, including state machines, actions, transitions, and observability",
+    "files": [
+      "SKILL.md",
+      "api-reference.md",
+      "examples.md",
+      "patterns.md",
+      "troubleshooting.md",
+      "README.md"
+    ]
+  },
+  "install": {
+    "message": "Apache Burr skill installed! Use /burr to get expert help building state machine applications.",
+    "requirements": []
+  }
+}
