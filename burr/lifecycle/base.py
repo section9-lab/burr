@@ -492,6 +492,98 @@ class PostEndStreamHookAsync(abc.ABC):
         pass
 
 
+@lifecycle.base_hook("pre_stream_generate")
+class PreStreamGenerateHook(abc.ABC):
+    """Hook that runs before the generator produces its next item.
+    Paired with PostStreamGenerateHook to bracket the actual generation time
+    for each stream item, excluding consumer processing time.
+    """
+
+    @abc.abstractmethod
+    def pre_stream_generate(
+        self,
+        *,
+        item_index: int,
+        stream_initialize_time: datetime.datetime,
+        action: str,
+        sequence_id: int,
+        app_id: str,
+        partition_key: Optional[str],
+        **future_kwargs: Any,
+    ):
+        pass
+
+
+@lifecycle.base_hook("pre_stream_generate")
+class PreStreamGenerateHookAsync(abc.ABC):
+    """Hook that runs before the generator produces its next item (async variant).
+    Paired with PostStreamGenerateHookAsync to bracket the actual generation time
+    for each stream item, excluding consumer processing time.
+    """
+
+    @abc.abstractmethod
+    async def pre_stream_generate(
+        self,
+        *,
+        item_index: int,
+        stream_initialize_time: datetime.datetime,
+        action: str,
+        sequence_id: int,
+        app_id: str,
+        partition_key: Optional[str],
+        **future_kwargs: Any,
+    ):
+        pass
+
+
+@lifecycle.base_hook("post_stream_generate")
+class PostStreamGenerateHook(abc.ABC):
+    """Hook that runs after the generator has produced an item (or exhausted/errored).
+    Paired with PreStreamGenerateHook to bracket the actual generation time
+    for each stream item, excluding consumer processing time.
+    """
+
+    @abc.abstractmethod
+    def post_stream_generate(
+        self,
+        *,
+        item: Any,
+        item_index: int,
+        stream_initialize_time: datetime.datetime,
+        action: str,
+        sequence_id: int,
+        app_id: str,
+        partition_key: Optional[str],
+        exception: Optional[Exception],
+        **future_kwargs: Any,
+    ):
+        pass
+
+
+@lifecycle.base_hook("post_stream_generate")
+class PostStreamGenerateHookAsync(abc.ABC):
+    """Hook that runs after the generator has produced an item (or exhausted/errored).
+    Async variant. Paired with PreStreamGenerateHookAsync to bracket the actual
+    generation time for each stream item, excluding consumer processing time.
+    """
+
+    @abc.abstractmethod
+    async def post_stream_generate(
+        self,
+        *,
+        item: Any,
+        item_index: int,
+        stream_initialize_time: datetime.datetime,
+        action: str,
+        sequence_id: int,
+        app_id: str,
+        partition_key: Optional[str],
+        exception: Optional[Exception],
+        **future_kwargs: Any,
+    ):
+        pass
+
+
 # strictly for typing -- this conflicts a bit with the lifecycle decorator above, but its fine for now
 # This makes IDE completion/type-hinting easier
 LifecycleAdapter = Union[
@@ -515,4 +607,8 @@ LifecycleAdapter = Union[
     PreStartStreamHookAsync,
     PostStreamItemHookAsync,
     PostEndStreamHookAsync,
+    PreStreamGenerateHook,
+    PreStreamGenerateHookAsync,
+    PostStreamGenerateHook,
+    PostStreamGenerateHookAsync,
 ]

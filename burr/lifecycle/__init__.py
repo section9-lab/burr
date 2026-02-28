@@ -23,11 +23,15 @@ from burr.lifecycle.base import (
     PostEndSpanHook,
     PostRunStepHook,
     PostRunStepHookAsync,
+    PostStreamGenerateHook,
+    PostStreamGenerateHookAsync,
     PreApplicationExecuteCallHook,
     PreApplicationExecuteCallHookAsync,
     PreRunStepHook,
     PreRunStepHookAsync,
     PreStartSpanHook,
+    PreStreamGenerateHook,
+    PreStreamGenerateHookAsync,
 )
 from burr.lifecycle.default import StateAndResultsFullLogger
 
@@ -45,4 +49,8 @@ __all__ = [
     "PostApplicationCreateHook",
     "PostEndSpanHook",
     "PreStartSpanHook",
+    "PreStreamGenerateHook",
+    "PreStreamGenerateHookAsync",
+    "PostStreamGenerateHook",
+    "PostStreamGenerateHookAsync",
 ]

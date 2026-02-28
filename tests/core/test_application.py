@@ -83,12 +83,16 @@ from burr.lifecycle.base import (
     PostApplicationExecuteCallHook,
     PostApplicationExecuteCallHookAsync,
     PostEndStreamHook,
+    PostStreamGenerateHook,
+    PostStreamGenerateHookAsync,
     PostStreamItemHook,
     PostStreamItemHookAsync,
     PreApplicationExecuteCallHook,
     PreApplicationExecuteCallHookAsync,
     PreStartStreamHook,
     PreStartStreamHookAsync,
+    PreStreamGenerateHook,
+    PreStreamGenerateHookAsync,
 )
 from burr.lifecycle.internal import LifecycleAdapterSet
 from burr.tracking.base import SyncTrackingClient
@@ -3761,3 +3765,364 @@ def test_initialize_from_applies_override_state_values():
     app = builder.build()
 
     assert app.state["x"] == 100
+
+
+# ============================================================================
+# Tests for pre_stream_generate / post_stream_generate lifecycle hooks
+# ============================================================================
+
+
+class GenerateEventCaptureTracker(
+    PreStartStreamHook,
+    PostEndStreamHook,
+):
+    """Captures pre/post_stream_generate calls via the new hooks, plus
+    existing pre_start_stream/post_end_stream for ordering verification."""
+
+    def __init__(self):
+        self.calls: list[tuple[str, dict]] = []
+
+    def pre_start_stream(
+        self, *, action: str, sequence_id: int, app_id: str, partition_key, **future_kwargs
+    ):
+        self.calls.append(("pre_start_stream", {"action": action}))
+
+    def post_end_stream(
+        self, *, action: str, sequence_id: int, app_id: str, partition_key, **future_kwargs
+    ):
+        self.calls.append(("post_end_stream", {"action": action}))
+
+
+class StreamGenerateTracker(PreStreamGenerateHook, PostStreamGenerateHook):
+    """Sync tracker that captures pre/post_stream_generate hook calls."""
+
+    def __init__(self):
+        self.calls: list[tuple[str, int]] = []  # (hook_name, item_index)
+
+    def pre_stream_generate(self, *, item_index: int, action: str, **future_kwargs):
+        self.calls.append(("pre_stream_generate", item_index))
+
+    def post_stream_generate(
+        self, *, item, item_index: int, action: str, exception, **future_kwargs
+    ):
+        self.calls.append(("post_stream_generate", item_index))
+
+
+class StreamGenerateTrackerAsync(PreStreamGenerateHookAsync, PostStreamGenerateHookAsync):
+    """Async tracker that captures pre/post_stream_generate hook calls."""
+
+    def __init__(self):
+        self.calls: list[tuple[str, int]] = []
+
+    async def pre_stream_generate(self, *, item_index: int, action: str, **future_kwargs):
+        self.calls.append(("pre_stream_generate", item_index))
+
+    async def post_stream_generate(
+        self, *, item, item_index: int, action: str, exception, **future_kwargs
+    ):
+        self.calls.append(("post_stream_generate", item_index))
+
+
+# --- Test #1: sync single-step calls pre/post_stream_generate ---
+
+
+def test__run_single_step_streaming_action_calls_stream_generate_hooks():
+    tracker = StreamGenerateTracker()
+    action = base_streaming_single_step_counter.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _run_single_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    collections.deque(generator, maxlen=0)  # exhaust
+    # 10 intermediate yields + 1 final yield = 11 items from the action generator
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    # pre fires before each __next__ including the StopIteration attempt (11 items + 1 stop = 12)
+    assert len(pre_calls) == 12
+    assert len(post_calls) == 12  # matched: 11 items + 1 StopIteration
+
+
+# --- Test #2: sync multi-step calls pre/post_stream_generate ---
+
+
+def test__run_multi_step_streaming_action_calls_stream_generate_hooks():
+    tracker = StreamGenerateTracker()
+    action = base_streaming_counter.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _run_multi_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    collections.deque(generator, maxlen=0)
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    # Multi-step: 11 items from generator + 1 StopIteration attempt = 12 pre, 12 post
+    assert len(pre_calls) == 12
+    assert len(post_calls) == 12
+
+
+# --- Test #3: async single-step calls pre/post_stream_generate ---
+
+
+async def test__arun_single_step_streaming_action_calls_stream_generate_hooks():
+    tracker = StreamGenerateTrackerAsync()
+    action = base_streaming_single_step_counter_async.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _arun_single_step_streaming_action(
+        action=action,
+        state=state,
+        inputs={},
+        sequence_id=0,
+        app_id="app",
+        partition_key="pk",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    async for _ in generator:
+        pass
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    assert len(pre_calls) == 12
+    assert len(post_calls) == 12
+
+
+# --- Test #4: async multi-step calls pre/post_stream_generate ---
+
+
+async def test__arun_multi_step_streaming_action_calls_stream_generate_hooks():
+    tracker = StreamGenerateTrackerAsync()
+    action = base_streaming_counter_async.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _arun_multi_step_streaming_action(
+        action=action,
+        state=state,
+        inputs={},
+        sequence_id=0,
+        app_id="app",
+        partition_key="pk",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    async for _ in generator:
+        pass
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    assert len(pre_calls) == 12
+    assert len(post_calls) == 12
+
+
+# --- Test #5: hook ordering (pre always before corresponding post) ---
+
+
+def test__run_single_step_streaming_action_stream_generate_hook_ordering():
+    tracker = StreamGenerateTracker()
+    action = base_streaming_single_step_counter.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _run_single_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    collections.deque(generator, maxlen=0)
+    # Verify strict interleaving: pre(0), post(0), pre(1), post(1), ...
+    for i in range(0, len(tracker.calls), 2):
+        assert tracker.calls[i] == ("pre_stream_generate", i // 2)
+        assert tracker.calls[i + 1] == ("post_stream_generate", i // 2)
+
+
+async def test__arun_multi_step_streaming_action_stream_generate_hook_ordering():
+    tracker = StreamGenerateTrackerAsync()
+    action = base_streaming_counter_async.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _arun_multi_step_streaming_action(
+        action=action,
+        state=state,
+        inputs={},
+        sequence_id=0,
+        app_id="app",
+        partition_key="pk",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    async for _ in generator:
+        pass
+    for i in range(0, len(tracker.calls), 2):
+        assert tracker.calls[i] == ("pre_stream_generate", i // 2)
+        assert tracker.calls[i + 1] == ("post_stream_generate", i // 2)
+
+
+# --- Test #7: error mid-stream ---
+
+
+class ErrorAfterNSingleStep(SingleStepStreamingAction):
+    """Action that raises after n intermediate yields."""
+
+    def __init__(self, n: int):
+        super().__init__()
+        self.n = n
+
+    def stream_run_and_update(self, state, **run_kwargs):
+        for i in range(self.n):
+            yield {"i": i}, None
+        raise RuntimeError("boom")
+
+    @property
+    def reads(self):
+        return []
+
+    @property
+    def writes(self):
+        return []
+
+
+def test__run_single_step_streaming_action_stream_generate_on_error():
+    tracker = StreamGenerateTracker()
+    action = ErrorAfterNSingleStep(3).with_name("errorer")
+    state = State({})
+    generator = _run_single_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    with pytest.raises(RuntimeError, match="boom"):
+        collections.deque(generator, maxlen=0)
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    # 3 successful yields + 1 that raises = 4 pre, 4 post (error post has exception)
+    assert len(pre_calls) == 4
+    assert len(post_calls) == 4
+
+
+# --- Test #8: existing post_stream_item callbacks unchanged ---
+
+
+def test__run_single_step_streaming_action_existing_callbacks_unchanged_with_generate_hooks():
+    class TrackingCallback(PostStreamItemHook):
+        def __init__(self):
+            self.items = []
+
+        def post_stream_item(self, item, **future_kwargs):
+            self.items.append(item)
+
+    hook = TrackingCallback()
+    gen_tracker = StreamGenerateTracker()
+    action = base_streaming_single_step_counter.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    generator = _run_single_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(hook, gen_tracker),
+    )
+    collections.deque(generator, maxlen=0)
+    # post_stream_item still fires exactly 10 times (only for intermediate items)
+    assert len(hook.items) == 10
+    # But pre/post_stream_generate fire for all items + StopIteration
+    pre_calls = [c for c in gen_tracker.calls if c[0] == "pre_stream_generate"]
+    assert len(pre_calls) == 12
+
+
+# --- Test #18: single yield ---
+
+
+class SingleYieldAction(SingleStepStreamingAction):
+    def stream_run_and_update(self, state, **run_kwargs):
+        yield {"val": 1}, None
+        yield {"val": 2}, state
+
+    @property
+    def reads(self):
+        return []
+
+    @property
+    def writes(self):
+        return []
+
+
+def test__stream_generate_hooks_single_intermediate_yield():
+    tracker = StreamGenerateTracker()
+    action = SingleYieldAction().with_name("single")
+    state = State({})
+    gen = _run_single_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    collections.deque(gen, maxlen=0)
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    # 2 items + 1 StopIteration = 3 pre/post pairs
+    assert len(pre_calls) == 3
+    assert len(post_calls) == 3
+
+
+# --- Test #19: zero intermediate yields ---
+
+
+class NoIntermediateYieldAction(SingleStepStreamingAction):
+    def stream_run_and_update(self, state, **run_kwargs):
+        yield {"val": 1}, state
+
+    @property
+    def reads(self):
+        return []
+
+    @property
+    def writes(self):
+        return []
+
+
+def test__stream_generate_hooks_zero_intermediate_yields():
+    tracker = StreamGenerateTracker()
+    action = NoIntermediateYieldAction().with_name("noint")
+    state = State({})
+    gen = _run_single_step_streaming_action(
+        action,
+        state,
+        inputs={},
+        sequence_id=0,
+        partition_key="pk",
+        app_id="app",
+        lifecycle_adapters=LifecycleAdapterSet(tracker),
+    )
+    collections.deque(gen, maxlen=0)
+    pre_calls = [c for c in tracker.calls if c[0] == "pre_stream_generate"]
+    post_calls = [c for c in tracker.calls if c[0] == "post_stream_generate"]
+    # 1 item (final) + 1 StopIteration = 2 pre/post pairs
+    assert len(pre_calls) == 2
+    assert len(post_calls) == 2
+
+
+# --- Test #20: non-streaming action doesn't fire stream generate hooks ---
+
+
+def test__non_streaming_action_does_not_fire_stream_generate_hooks():
+    tracker = StreamGenerateTracker()
+    action = base_single_step_counter.with_name("counter")
+    state = State({"count": 0, "tracker": []})
+    _run_single_step_action(action, state, inputs={})
+    # No stream generate hooks should have been called
+    assert len(tracker.calls) == 0

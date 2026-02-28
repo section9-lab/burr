@@ -17,12 +17,14 @@
 
 import dataclasses
 import datetime
+import enum
 import importlib
 import importlib.metadata
 import json
 import logging
 import random
 import sys
+import time
 from contextvars import ContextVar
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
@@ -47,8 +49,10 @@ from burr.core import Action, ApplicationGraph, State, serde
 from burr.lifecycle import (
     PostApplicationExecuteCallHook,
     PostRunStepHook,
+    PostStreamGenerateHook,
     PreApplicationExecuteCallHook,
     PreRunStepHook,
+    PreStreamGenerateHook,
 )
 from burr.lifecycle.base import DoLogAttributeHook, ExecuteMethod, PostEndSpanHook, PreStartSpanHook
 from burr.tracking import LocalTrackingClient
@@ -86,6 +90,43 @@ def get_cached_span(span_id: int) -> Optional[FullSpanContext]:
 
 
 tracker_context = ContextVar[Optional[SyncTrackingClient]]("tracker_context", default=None)
+
+# Tracks whether the action-level span was skipped for streaming actions
+_skipped_action_span = ContextVar[bool]("_skipped_action_span", default=False)
+
+
+# Valid streaming telemetry modes
+class StreamingTelemetryMode(enum.Enum):
+    """Controls how streaming actions are instrumented by the OpenTelemetryBridge.
+
+    - ``SINGLE_SPAN``: A single action span covers the full generator lifetime (default).
+    - ``EVENT``: A single action span plus a ``stream_completed`` summary span event.
+    - ``CHUNK_SPANS``: No action span. Per-yield child spans under the method span.
+    - ``SINGLE_AND_CHUNK_SPANS``: Action span with summary event plus per-yield child spans.
+    """
+
+    SINGLE_SPAN = "single_span"
+    EVENT = "event"
+    CHUNK_SPANS = "chunk_spans"
+    SINGLE_AND_CHUNK_SPANS = "single_and_chunk_spans"
+
+
+@dataclasses.dataclass
+class _StreamingAccumulator:
+    """Accumulates timing data across stream yields for the span event summary."""
+
+    generation_time_ns: int = 0
+    consumer_time_ns: int = 0
+    iteration_count: int = 0
+    first_item_time_ns: Optional[int] = None
+    stream_start_ns: Optional[int] = None
+    last_post_generate_ns: Optional[int] = None
+    _pre_generate_ns: Optional[int] = None
+
+
+_streaming_accumulator = ContextVar[Optional[_StreamingAccumulator]](
+    "_streaming_accumulator", default=None
+)
 
 
 def _is_homogeneous_sequence(value: Sequence):
@@ -149,20 +190,34 @@ class OpenTelemetryBridge(
     PreStartSpanHook,
     PostEndSpanHook,
     DoLogAttributeHook,
+    PreStreamGenerateHook,
+    PostStreamGenerateHook,
 ):
-    """Adapter to log Burr events to OpenTelemetry. At a high level, this works as follows:
+    """Lifecycle adapter that maps Burr execution events to OpenTelemetry spans and events.
 
-    1. On any of the start/pre hooks (pre_run_execute_call, pre_run_step, pre_start_span), we start a new span
-    2. On any of the post ones we exit the span, accounting for the error (setting it if needed)
-    3. On do_log_attributes, we log the attributes to the current span -- these are serialized using the serde module
+    **How it works**
 
-    This works by logging to OpenTelemetry, and setting the span processor to be the right one (that knows about the tracker).
+    The bridge implements Burr lifecycle hooks to create a span hierarchy that mirrors the
+    execution structure:
 
-    You can use this as follows:
+    1. ``pre_run_execute_call`` / ``post_run_execute_call`` — creates a top-level **method span**
+       for the application method being called (e.g. ``step``, ``astream_result``).
+    2. ``pre_run_step`` / ``post_run_step`` — creates an **action span** as a child of the
+       method span. For streaming actions, behavior depends on the ``streaming_telemetry`` mode.
+    3. ``pre_start_span`` / ``post_end_span`` — creates **sub-action spans** for user-defined
+       visibility spans (via ``TracerFactory`` / ``__tracer``).
+    4. ``do_log_attributes`` — sets OTel attributes on the current span.
+    5. ``pre_stream_generate`` / ``post_stream_generate`` — for streaming actions, optionally
+       creates per-yield **chunk spans** and/or accumulates timing data for a summary event.
+
+    All spans are managed via a ContextVar-based token stack (``token_stack``) to correctly
+    handle nesting across sync and async execution.
+
+    **Usage**
 
     .. code-block:: python
 
-        # replace with instructions from your prefered vendor
+        # replace with instructions from your preferred vendor
         my_vendor_library_or_tracer_provider.init()
 
         app = (
@@ -174,15 +229,44 @@ class OpenTelemetryBridge(
             .build()
         )
 
-        app.run() # will log to OpenTelemetry
+        app.run()  # will log to OpenTelemetry
+
+    **Streaming telemetry modes**
+
+    The ``streaming_telemetry`` parameter controls how streaming actions are instrumented.
+    Non-streaming actions are unaffected — they always produce a single action span.
+
+    - ``StreamingTelemetryMode.SINGLE_SPAN`` (default): A single action span covers the full
+      generator lifetime (including consumer wait time). Streaming **attributes** are set on
+      the span with the generation/consumer timing breakdown:
+
+      - ``stream.generation_time_ms`` — time spent inside the generator producing items
+      - ``stream.consumer_time_ms`` — time the consumer spent processing yielded items
+      - ``stream.iteration_count`` — number of items yielded
+      - ``stream.first_item_time_ms`` — time to first item (TTFT)
+
+    - ``StreamingTelemetryMode.EVENT``: No action span. A ``stream_completed`` (or
+      ``stream_error``) span event is added to the **method span** with the timing summary
+      (including ``stream.total_time_ms`` since there is no action span to carry duration).
+    - ``StreamingTelemetryMode.CHUNK_SPANS``: No action span. A child span
+      (``{action}::chunk_{N}``) is created for each generator yield under the method span.
+      Each chunk span measures only generation time (excludes consumer processing time).
+    - ``StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS``: Combines ``SINGLE_SPAN`` and ``CHUNK_SPANS`` — the
+      action span (with streaming attributes) plus per-yield chunk spans as its children.
     """
 
-    def __init__(self, tracer_name: str = None, tracer: trace.Tracer = None):
+    def __init__(
+        self,
+        tracer_name: str = None,
+        tracer: trace.Tracer = None,
+        streaming_telemetry: StreamingTelemetryMode = StreamingTelemetryMode.SINGLE_SPAN,
+    ):
         """Initializes an OpenTel adapter. Passes in a tracer_name or a tracer object,
         should only pass one.
 
         :param tracer_name: Name of the tracer if you want it to initialize for you -- not including it will use a default
         :param tracer: Tracer object if you want to pass it in yourself
+        :param streaming_telemetry: How to instrument streaming actions. See :class:`StreamingTelemetryMode`.
         """
         if tracer_name and tracer:
             raise ValueError(
@@ -192,6 +276,54 @@ class OpenTelemetryBridge(
             self.tracer = tracer
         else:
             self.tracer = trace.get_tracer(__name__ if tracer_name is None else tracer_name)
+        self.streaming_telemetry = streaming_telemetry
+
+    @property
+    def _emit_chunk_spans(self) -> bool:
+        """Whether to create per-yield chunk spans (CHUNK_SPANS or BOTH)."""
+        return self.streaming_telemetry in (
+            StreamingTelemetryMode.CHUNK_SPANS,
+            StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS,
+        )
+
+    @property
+    def _emit_event(self) -> bool:
+        """Whether to emit a summary span event on the method span (EVENT only).
+
+        EVENT mode skips the action span entirely and attaches a ``stream_completed``
+        event to the method span instead.
+        """
+        return self.streaming_telemetry == StreamingTelemetryMode.EVENT
+
+    @property
+    def _emit_attributes(self) -> bool:
+        """Whether to set streaming attributes on the action span (SINGLE_SPAN or BOTH).
+
+        These modes create an action span and set generation time, consumer time,
+        iteration count, and TTFT as span attributes.
+        """
+        return self.streaming_telemetry in (
+            StreamingTelemetryMode.SINGLE_SPAN,
+            StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS,
+        )
+
+    @property
+    def _use_accumulator(self) -> bool:
+        """Whether timing accumulation is needed (all modes except CHUNK_SPANS)."""
+        return self.streaming_telemetry != StreamingTelemetryMode.CHUNK_SPANS
+
+    @property
+    def _skip_single_action_span_for_streaming(self) -> bool:
+        """Whether to skip the action-level span for streaming actions.
+
+        True for EVENT and CHUNK_SPANS modes. EVENT attaches data to the method span
+        instead. CHUNK_SPANS replaces the action span with per-yield child spans.
+        In SINGLE_SPAN and BOTH modes, the action span is created normally.
+        """
+        return self.streaming_telemetry in (
+            StreamingTelemetryMode.EVENT,
+            StreamingTelemetryMode.CHUNK_SPANS,
+        )
 
     def pre_run_execute_call(
         self,
@@ -199,6 +331,11 @@ class OpenTelemetryBridge(
         method: ExecuteMethod,
         **future_kwargs: Any,
     ):
+        """Opens the top-level **method span** (e.g. ``step``, ``astream_result``).
+
+        This is the outermost span in the Burr trace hierarchy. Action spans and chunk
+        spans are nested under it.
+        """
         # TODO -- handle links -- we need to wire this through
         _enter_span(method.value, self.tracer)
 
@@ -208,6 +345,11 @@ class OpenTelemetryBridge(
         attributes: Dict[str, Any],
         **future_kwargs: Any,
     ):
+        """Sets key-value attributes on the current OTel span.
+
+        Values are serialized via :func:`convert_to_otel_attribute` to ensure they are
+        OTel-compatible types (str, bool, int, float, or homogeneous sequences thereof).
+        """
         otel_span = get_current_span()
         if otel_span is None:
             logger.warning(
@@ -224,7 +366,22 @@ class OpenTelemetryBridge(
         action: "Action",
         **future_kwargs: Any,
     ):
-        _enter_span(action.name, self.tracer)
+        """Opens an **action span** for the step about to execute.
+
+        For streaming actions in ``EVENT`` or ``CHUNK_SPANS`` mode, the action span is
+        skipped. In ``SINGLE_SPAN`` and ``SINGLE_AND_CHUNK_SPANS`` modes, the action span is created normally.
+
+        For all modes except ``CHUNK_SPANS``, a :class:`_StreamingAccumulator` is initialized
+        to collect timing data across generator yields.
+        """
+        if getattr(action, "streaming", False) and self._skip_single_action_span_for_streaming:
+            _skipped_action_span.set(True)
+        else:
+            _skipped_action_span.set(False)
+            _enter_span(action.name, self.tracer)
+        # Initialize accumulator for modes that need timing data
+        if getattr(action, "streaming", False) and self._use_accumulator:
+            _streaming_accumulator.set(_StreamingAccumulator())
 
     def pre_start_span(
         self,
@@ -232,6 +389,11 @@ class OpenTelemetryBridge(
         span: "ActionSpan",
         **future_kwargs: Any,
     ):
+        """Opens a **sub-action span** for a user-defined visibility span.
+
+        These are created by the ``TracerFactory`` (``__tracer``) context manager inside
+        actions, and are nested under the current action span.
+        """
         _enter_span(span.name, self.tracer)
 
     def post_end_span(
@@ -240,6 +402,7 @@ class OpenTelemetryBridge(
         span: "ActionSpan",
         **future_kwargs: Any,
     ):
+        """Closes a sub-action span opened by :meth:`pre_start_span`."""
         # TODO -- wire through exceptions
         _exit_span()
 
@@ -249,7 +412,120 @@ class OpenTelemetryBridge(
         exception: Exception,
         **future_kwargs: Any,
     ):
-        _exit_span(exception)
+        """Closes the action span and, for streaming actions, emits summary telemetry.
+
+        Behavior depends on mode:
+
+        - ``SINGLE_SPAN`` / ``SINGLE_AND_CHUNK_SPANS``: Sets streaming attributes on the action span, then
+          closes it.
+        - ``EVENT``: Emits a ``stream_completed`` (or ``stream_error``) span event on the
+          method span (the action span was skipped). Resets the skipped flag.
+        - ``CHUNK_SPANS``: The action span was skipped; just resets the flag.
+        """
+        acc = _streaming_accumulator.get()
+        if acc is not None:
+            first_item_ms = 0.0
+            if acc.first_item_time_ns is not None and acc.stream_start_ns is not None:
+                first_item_ms = (acc.first_item_time_ns - acc.stream_start_ns) / 1e6
+
+            if self._emit_attributes:
+                # SINGLE_SPAN / BOTH: set attributes on the action span
+                otel_span = get_current_span()
+                if otel_span is not None:
+                    otel_span.set_attributes(
+                        {
+                            "stream.generation_time_ms": acc.generation_time_ns / 1e6,
+                            "stream.consumer_time_ms": acc.consumer_time_ns / 1e6,
+                            "stream.iteration_count": acc.iteration_count,
+                            "stream.first_item_time_ms": first_item_ms,
+                        }
+                    )
+
+            elif self._emit_event:
+                # EVENT: emit span event on the method span (action span was skipped)
+                otel_span = get_current_span()
+                if otel_span is not None:
+                    total_time_ns = 0
+                    if acc.stream_start_ns is not None and acc.last_post_generate_ns is not None:
+                        total_time_ns = acc.last_post_generate_ns - acc.stream_start_ns
+                    event_name = "stream_error" if exception else "stream_completed"
+                    attrs: Dict[str, Any] = {
+                        "stream.generation_time_ms": acc.generation_time_ns / 1e6,
+                        "stream.consumer_time_ms": acc.consumer_time_ns / 1e6,
+                        "stream.total_time_ms": total_time_ns / 1e6,
+                        "stream.iteration_count": acc.iteration_count,
+                        "stream.first_item_time_ms": first_item_ms,
+                    }
+                    if exception:
+                        attrs["stream.error"] = str(exception)
+                    otel_span.add_event(event_name, attributes=attrs)
+
+            _streaming_accumulator.set(None)
+
+        if _skipped_action_span.get():
+            _skipped_action_span.set(False)
+        else:
+            _exit_span(exception)
+
+    def pre_stream_generate(
+        self,
+        *,
+        action: str,
+        item_index: int,
+        **future_kwargs: Any,
+    ):
+        """Called just before each ``__next__()`` / ``__anext__()`` on the generator.
+
+        For modes with accumulation (``SINGLE_SPAN``, ``EVENT``, ``SINGLE_AND_CHUNK_SPANS``), records the
+        start of generation time and accumulates consumer time (the gap between the previous
+        ``post_stream_generate`` and now).
+
+        In ``CHUNK_SPANS`` or ``SINGLE_AND_CHUNK_SPANS`` mode, opens a child span named
+        ``{action}::chunk_{item_index}``.
+        """
+        now_ns = time.time_ns()
+        acc = _streaming_accumulator.get()
+        if acc is not None:
+            if acc.stream_start_ns is None:
+                acc.stream_start_ns = now_ns
+            if acc.last_post_generate_ns is not None:
+                acc.consumer_time_ns += now_ns - acc.last_post_generate_ns
+            acc._pre_generate_ns = now_ns  # stash for post
+
+        if self._emit_chunk_spans:
+            _enter_span(f"{action}::chunk_{item_index}", self.tracer)
+
+    def post_stream_generate(
+        self,
+        *,
+        item: Any,
+        item_index: int,
+        exception: Optional[Exception],
+        **future_kwargs: Any,
+    ):
+        """Called just after each ``__next__()`` / ``__anext__()`` returns (or raises).
+
+        For modes with accumulation (``SINGLE_SPAN``, ``EVENT``, ``SINGLE_AND_CHUNK_SPANS``), accumulates
+        generation time and updates the iteration count. When ``item`` is not ``None``,
+        the item is counted; a ``None`` item signals generator exhaustion (``StopIteration``).
+
+        In ``CHUNK_SPANS`` or ``SINGLE_AND_CHUNK_SPANS`` mode, closes the chunk span opened by
+        :meth:`pre_stream_generate`, setting an error status if ``exception`` is provided.
+        """
+        now_ns = time.time_ns()
+        acc = _streaming_accumulator.get()
+        if acc is not None:
+            pre_ns = acc._pre_generate_ns
+            if pre_ns is not None:
+                acc.generation_time_ns += now_ns - pre_ns
+            if item is not None:
+                acc.iteration_count += 1
+                if acc.first_item_time_ns is None:
+                    acc.first_item_time_ns = now_ns
+            acc.last_post_generate_ns = now_ns
+
+        if self._emit_chunk_spans:
+            _exit_span(exception)
 
     def post_run_execute_call(
         self,
@@ -257,6 +533,7 @@ class OpenTelemetryBridge(
         exception: Optional[Exception],
         **future_kwargs,
     ):
+        """Closes the top-level method span opened by :meth:`pre_run_execute_call`."""
         _exit_span(exception)
 
 
@@ -704,8 +981,6 @@ if __name__ == "__main__":
     tracer = trace.get_tracer(__name__)
     tracker = LocalTrackingClient("otel_test")
     opentel_adapter = OpenTelemetryTracker(burr_tracker=tracker)
-
-    import time
 
     from burr.core import ApplicationBuilder, Result, action, default, expr
     from burr.visibility import TracerFactory
