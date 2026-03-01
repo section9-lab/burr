@@ -20,14 +20,23 @@
 Runs a simple async streaming action under each mode with the OTel console
 exporter so you can see the spans and events printed to stdout.
 
+When --tracker is passed, each mode also gets a LocalTrackingClient so the
+results show up in the Burr UI (run ``burr`` to open it).
+
 Usage:
+    # OTel console output only
     python examples/opentelemetry/streaming_telemetry_modes.py
+
+    # OTel console output + Burr tracker (viewable in the UI)
+    python examples/opentelemetry/streaming_telemetry_modes.py --tracker
 
 No external APIs are needed — the streaming action simulates an LLM by yielding
 tokens with small delays.
 """
 
+import argparse
 import asyncio
+import time
 
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
@@ -68,7 +77,7 @@ graph = GraphBuilder().with_actions(generate=generate_response).with_transitions
 # ---------------------------------------------------------------------------
 
 
-async def run_with_mode(mode: StreamingTelemetryMode) -> None:
+async def run_with_mode(mode: StreamingTelemetryMode, use_tracker: bool = False) -> None:
     """Builds an app with the given streaming telemetry mode and runs it."""
     # Each run gets its own tracer provider so console output stays grouped
     provider = TracerProvider()
@@ -77,15 +86,19 @@ async def run_with_mode(mode: StreamingTelemetryMode) -> None:
 
     bridge = OpenTelemetryBridge(tracer=tracer, streaming_telemetry=mode)
 
-    app = (
+    builder = (
         ApplicationBuilder()
         .with_graph(graph)
         .with_entrypoint("generate")
         .with_state(State({"prompt": "hello world from burr streaming"}))
         .with_hooks(bridge)
-        .with_identifiers(app_id=f"demo-{mode.value}")
-        .build()
+        .with_identifiers(app_id=f"demo-{mode.value}-{time.time()}")
     )
+
+    if use_tracker:
+        builder = builder.with_tracker(project="streaming-telemetry-modes", tracker="local")
+
+    app = builder.build()
 
     action, container = await app.astream_result(halt_after=["generate"])
     async for item in container:
@@ -100,7 +113,7 @@ async def run_with_mode(mode: StreamingTelemetryMode) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def main():
+async def main(use_tracker: bool = False):
     modes = [
         StreamingTelemetryMode.SINGLE_SPAN,
         StreamingTelemetryMode.EVENT,
@@ -111,9 +124,20 @@ async def main():
         print(f"\n{'=' * 70}")
         print(f"  StreamingTelemetryMode.{mode.name}")
         print(f"{'=' * 70}\n")
-        await run_with_mode(mode)
+        await run_with_mode(mode, use_tracker=use_tracker)
         print()
+
+    if use_tracker:
+        print("Tracker data written to ~/.burr/streaming-telemetry-modes/")
+        print("Run `burr` to open the UI and inspect the streaming timing data.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--tracker",
+        action="store_true",
+        help="Enable the Burr LocalTrackingClient so results appear in the UI",
+    )
+    args = parser.parse_args()
+    asyncio.run(main(use_tracker=args.tracker))

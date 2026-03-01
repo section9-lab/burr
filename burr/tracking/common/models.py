@@ -261,7 +261,14 @@ class FirstItemStreamModel(IdentifyingModel):
 
 
 class EndStreamModel(IdentifyingModel):
-    """Pydantic model that represents an entry for the first item of a stream"""
+    """Pydantic model that represents the end of a stream.
+
+    The optional timing fields (generation_time_ms, consumer_time_ms, etc.) are
+    populated when the tracker has PreStreamGenerateHook/PostStreamGenerateHook
+    support. They are Optional so that:
+      - Old log files (without timing) still parse with new server code.
+      - New log files don't crash old server code (Pydantic ignores extra keys).
+    """
 
     action_sequence_id: int
     span_id: Optional[
@@ -270,6 +277,14 @@ class EndStreamModel(IdentifyingModel):
     end_time: datetime.datetime
     items_streamed: int
     type: str = "end_stream"
+
+    # --- Streaming timing summary (Optional for backwards compatibility) ---
+    # Sum of time spent inside the generator producing items (excludes consumer wait).
+    generation_time_ms: Optional[float] = None
+    # Sum of time the consumer spent processing yielded items between yields.
+    consumer_time_ms: Optional[float] = None
+    # Time from stream start to first item produced (time to first token / TTFT).
+    first_item_time_ms: Optional[float] = None
 
     @property
     def sequence_id(self) -> int:

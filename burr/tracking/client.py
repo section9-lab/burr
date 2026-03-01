@@ -18,13 +18,16 @@
 import abc
 import dataclasses
 import datetime
+import time
 
 from burr.common.types import BaseCopyable
 from burr.lifecycle.base import (
     DoLogAttributeHook,
     PostEndStreamHook,
+    PostStreamGenerateHook,
     PostStreamItemHook,
     PreStartStreamHook,
+    PreStreamGenerateHook,
 )
 
 # this is a quick hack to get it to work on windows
@@ -120,8 +123,37 @@ def _allowed_project_name(project_name: str, on_windows: bool) -> bool:
 
 @dataclasses.dataclass
 class StreamState:
+    """Tracks state for an in-progress stream.
+
+    The timing fields (generation_time_ns, consumer_time_ns, etc.) are populated
+    by the PreStreamGenerateHook/PostStreamGenerateHook implementations on the
+    tracker. They accumulate generation vs. consumer timing across all yields,
+    enabling the tracker to write a timing summary when the stream ends.
+
+    These fields default to 0/None so that existing code that only uses
+    stream_init_time/count continues to work unchanged.
+    """
+
     stream_init_time: datetime.datetime
     count: Optional[int]
+
+    # --- Streaming timing fields (populated by pre/post_stream_generate) ---
+    # Accumulated wall-clock nanoseconds the generator spent producing items.
+    generation_time_ns: int = 0
+    # Accumulated wall-clock nanoseconds the consumer spent processing items.
+    consumer_time_ns: int = 0
+    # Total number of items the generator has yielded so far.
+    iteration_count: int = 0
+    # Nanosecond timestamp of the first item produced (for TTFT calculation).
+    first_item_time_ns: Optional[int] = None
+    # Nanosecond timestamp when the stream started (first pre_stream_generate).
+    stream_start_ns: Optional[int] = None
+    # Nanosecond timestamp of the most recent post_stream_generate call,
+    # used to compute consumer_time between yields.
+    last_post_generate_ns: Optional[int] = None
+    # Nanosecond timestamp captured at the start of the current generation
+    # (set in pre_stream_generate, consumed in post_stream_generate).
+    _pre_generate_ns: Optional[int] = None
 
 
 StateKey = Tuple[str, str, Optional[str]]
@@ -137,9 +169,98 @@ class SyncTrackingClient(
     PreStartStreamHook,
     PostStreamItemHook,
     PostEndStreamHook,
+    PreStreamGenerateHook,
+    PostStreamGenerateHook,
     BaseCopyable,
     ABC,
 ):
+    """Synchronous tracking client base class (client.py variant).
+
+    Includes PreStreamGenerateHook/PostStreamGenerateHook so that all tracker
+    implementations automatically accumulate generation-vs-consumer timing for
+    streaming actions. The concrete implementations below populate the
+    StreamState timing fields; post_end_stream reads them to write the
+    EndStreamModel with timing data.
+
+    Subclasses do NOT need to override pre/post_stream_generate unless they
+    want custom behavior.
+    """
+
+    def pre_stream_generate(
+        self,
+        *,
+        item_index: int,
+        stream_initialize_time: datetime.datetime,
+        action: str,
+        sequence_id: int,
+        app_id: str,
+        partition_key: Optional[str],
+        **future_kwargs: Any,
+    ):
+        """Records the start of a single generator __next__() call.
+
+        Uses defensive getattr so custom subclasses without stream_state
+        won't crash.
+        """
+        stream_state = getattr(self, "stream_state", None)
+        if stream_state is None:
+            return
+        key = (app_id, action, partition_key)
+        state = stream_state.get(key)
+        if state is None:
+            return
+
+        now_ns = time.monotonic_ns()
+        state._pre_generate_ns = now_ns
+
+        if state.stream_start_ns is None:
+            state.stream_start_ns = now_ns
+
+        # Consumer time = gap between previous post_stream_generate and this call.
+        # On the first call there's no previous post, so consumer_time stays at 0.
+        if state.last_post_generate_ns is not None:
+            state.consumer_time_ns += now_ns - state.last_post_generate_ns
+
+    def post_stream_generate(
+        self,
+        *,
+        item: Any,
+        item_index: int,
+        stream_initialize_time: datetime.datetime,
+        action: str,
+        sequence_id: int,
+        app_id: str,
+        partition_key: Optional[str],
+        exception: Optional[Exception] = None,
+        **future_kwargs: Any,
+    ):
+        """Records the end of a single generator __next__() call.
+
+        Accumulates generation_time_ns, tracks iteration_count, and captures
+        first_item_time_ns for TTFT. Uses defensive getattr for compatibility.
+        """
+        stream_state = getattr(self, "stream_state", None)
+        if stream_state is None:
+            return
+        key = (app_id, action, partition_key)
+        state = stream_state.get(key)
+        if state is None:
+            return
+
+        now_ns = time.monotonic_ns()
+        state.last_post_generate_ns = now_ns
+
+        if state._pre_generate_ns is not None:
+            state.generation_time_ns += now_ns - state._pre_generate_ns
+            state._pre_generate_ns = None
+
+        if item is not None:
+            state.iteration_count += 1
+
+        if state.first_item_time_ns is None and item is not None:
+            if state.stream_start_ns is not None:
+                state.first_item_time_ns = now_ns - state.stream_start_ns
+
     @abc.abstractmethod
     def copy(self) -> Self:
         """Clones the tracking client. This is useful for forking applications.
@@ -591,12 +712,27 @@ class LocalTrackingClient(
         **future_kwargs: Any,
     ):
         stream_state = self.stream_state[app_id, action, partition_key]
+        # Convert nanosecond timing accumulated by pre/post_stream_generate
+        # into millisecond floats for the EndStreamModel. If stream_start_ns
+        # is None, the generate hooks never fired (e.g. the action isn't using
+        # the instrumented generator), so we leave timing fields as None.
+        generation_time_ms = None
+        consumer_time_ms = None
+        first_item_time_ms = None
+        if stream_state.stream_start_ns is not None:
+            generation_time_ms = stream_state.generation_time_ns / 1_000_000
+            consumer_time_ms = stream_state.consumer_time_ns / 1_000_000
+            if stream_state.first_item_time_ns is not None:
+                first_item_time_ms = stream_state.first_item_time_ns / 1_000_000
         self._append_write_line(
             EndStreamModel(
                 action_sequence_id=sequence_id,
                 span_id=None,
                 end_time=system.now(),
                 items_streamed=stream_state.count,
+                generation_time_ms=generation_time_ms,
+                consumer_time_ms=consumer_time_ms,
+                first_item_time_ms=first_item_time_ms,
             )
         )
         del self.stream_state[app_id, action, partition_key]

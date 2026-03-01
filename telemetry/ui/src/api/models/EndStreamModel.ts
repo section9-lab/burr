@@ -22,7 +22,10 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Pydantic model that represents an entry for the first item of a stream
+ * Pydantic model that represents the end of a stream.
+ *
+ * The optional timing fields are populated when the tracker has
+ * PreStreamGenerateHook/PostStreamGenerateHook support.
  */
 export type EndStreamModel = {
   type?: string;
@@ -30,4 +33,10 @@ export type EndStreamModel = {
   span_id: string | null;
   end_time: string;
   items_streamed: number;
+  /** Sum of time spent inside the generator producing items (ms). */
+  generation_time_ms?: number | null;
+  /** Sum of time the consumer spent processing yielded items (ms). */
+  consumer_time_ms?: number | null;
+  /** Time from stream start to first item produced / TTFT (ms). */
+  first_item_time_ms?: number | null;
 };

@@ -15,19 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import asyncio
 import json
 import os
+import time
 import uuid
-from typing import Literal, Optional, Tuple
+from typing import Generator, Literal, Optional, Tuple
 
 import pytest
 
 import burr
 from burr import lifecycle
 from burr.core import Action, Application, ApplicationBuilder, Result, State, action, default, expr
+from burr.core.action import StreamingAction, streaming_action
 from burr.core.persistence import BaseStatePersister, PersistedStateData
 from burr.tracking import LocalTrackingClient
-from burr.tracking.client import _allowed_project_name
+from burr.tracking.client import StreamState, _allowed_project_name
 from burr.tracking.common.models import (
     ApplicationMetadataModel,
     ApplicationModel,
@@ -37,6 +40,7 @@ from burr.tracking.common.models import (
     ChildApplicationModel,
     EndEntryModel,
     EndSpanModel,
+    EndStreamModel,
 )
 from burr.visibility import TracerFactory
 
@@ -494,3 +498,267 @@ def test_local_tracking_client_copy():
     assert copy.project_id == tracking_client.project_id
     assert copy.serde_kwargs == tracking_client.serde_kwargs
     assert copy.storage_dir == tracking_client.storage_dir
+
+
+# ---------------------------------------------------------------------------
+# StreamState timing accumulation tests
+# ---------------------------------------------------------------------------
+
+
+def test_stream_state_defaults():
+    """New timing fields on StreamState should default to 0/None so existing
+    code that only uses stream_init_time/count is unaffected."""
+    import datetime
+
+    ss = StreamState(stream_init_time=datetime.datetime.now(), count=0)
+    assert ss.generation_time_ns == 0
+    assert ss.consumer_time_ns == 0
+    assert ss.iteration_count == 0
+    assert ss.first_item_time_ns is None
+    assert ss.stream_start_ns is None
+    assert ss.last_post_generate_ns is None
+    assert ss._pre_generate_ns is None
+
+
+def test_pre_post_stream_generate_accumulates_timing():
+    """Directly exercises pre/post_stream_generate on LocalTrackingClient to
+    verify that generation_time_ns, consumer_time_ns, iteration_count, and
+    first_item_time_ns are accumulated correctly."""
+    import datetime
+
+    tracker = LocalTrackingClient("test", "/tmp/unused")
+    app_id = "app1"
+    action_name = "gen"
+    pk = None
+    key = (app_id, action_name, pk)
+    now = datetime.datetime.now()
+
+    # Simulate pre_start_stream creating the StreamState
+    tracker.stream_state[key] = StreamState(stream_init_time=now, count=0)
+
+    common = dict(
+        stream_initialize_time=now,
+        action=action_name,
+        sequence_id=0,
+        app_id=app_id,
+        partition_key=pk,
+    )
+
+    # Yield 0: pre -> (generation) -> post
+    tracker.pre_stream_generate(item_index=0, **common)
+    state = tracker.stream_state[key]
+    assert state.stream_start_ns is not None  # set on first call
+    assert state._pre_generate_ns is not None
+
+    tracker.post_stream_generate(item={"token": "hello"}, item_index=0, **common)
+    assert state.iteration_count == 1
+    assert state.generation_time_ns > 0
+    assert state.first_item_time_ns is not None  # TTFT captured
+    first_gen_time = state.generation_time_ns
+
+    # Yield 1: pre -> (generation) -> post
+    tracker.pre_stream_generate(item_index=1, **common)
+    # Consumer time should now be > 0 (gap between previous post and this pre)
+    assert state.consumer_time_ns > 0
+
+    tracker.post_stream_generate(item={"token": "world"}, item_index=1, **common)
+    assert state.iteration_count == 2
+    assert state.generation_time_ns > first_gen_time
+
+    # Final yield (item=None signals StopIteration)
+    tracker.pre_stream_generate(item_index=2, **common)
+    tracker.post_stream_generate(item=None, item_index=2, **common)
+    # item=None should NOT increment iteration_count
+    assert state.iteration_count == 2
+
+
+def test_pre_stream_generate_no_stream_state_is_noop():
+    """pre/post_stream_generate should silently do nothing when there's no
+    matching stream_state entry (defensive getattr pattern)."""
+    import datetime
+
+    tracker = LocalTrackingClient("test", "/tmp/unused")
+    now = datetime.datetime.now()
+    common = dict(
+        stream_initialize_time=now,
+        action="missing",
+        sequence_id=0,
+        app_id="missing",
+        partition_key=None,
+    )
+    # Should not raise
+    tracker.pre_stream_generate(item_index=0, **common)
+    tracker.post_stream_generate(item={"x": 1}, item_index=0, **common)
+
+
+# ---------------------------------------------------------------------------
+# EndStreamModel backwards compatibility tests
+# ---------------------------------------------------------------------------
+
+
+def test_end_stream_model_without_timing_fields():
+    """Old-style EndStreamModel JSON (no timing fields) should parse into the
+    new model with None timing values — backwards compatibility."""
+    old_json = (
+        '{"type":"end_stream","action_sequence_id":1,"span_id":null,'
+        '"end_time":"2024-01-01T00:00:00","items_streamed":10}'
+    )
+    model = EndStreamModel.model_validate_json(old_json)
+    assert model.items_streamed == 10
+    assert model.generation_time_ms is None
+    assert model.consumer_time_ms is None
+    assert model.first_item_time_ms is None
+
+
+def test_end_stream_model_with_timing_fields():
+    """EndStreamModel with timing fields should round-trip through JSON."""
+    import datetime
+
+    model = EndStreamModel(
+        action_sequence_id=1,
+        span_id=None,
+        end_time=datetime.datetime.now(),
+        items_streamed=47,
+        generation_time_ms=245.3,
+        consumer_time_ms=1830.1,
+        first_item_time_ms=52.0,
+    )
+    dumped = model.model_dump_json()
+    restored = EndStreamModel.model_validate_json(dumped)
+    assert restored.generation_time_ms == 245.3
+    assert restored.consumer_time_ms == 1830.1
+    assert restored.first_item_time_ms == 52.0
+
+
+# ---------------------------------------------------------------------------
+# End-to-end streaming test with LocalTrackingClient
+# ---------------------------------------------------------------------------
+
+
+class _SimpleStreamingAction(StreamingAction):
+    """A streaming action that yields a fixed number of items with a small
+    delay to produce measurable generation time."""
+
+    @property
+    def reads(self) -> list[str]:
+        return ["prompt"]
+
+    @property
+    def writes(self) -> list[str]:
+        return ["response"]
+
+    def stream_run(self, state: State, **run_kwargs) -> Generator[dict, None, None]:
+        tokens = state["prompt"].split()
+        for token in tokens:
+            time.sleep(0.01)  # small delay so generation_time_ns > 0
+            yield {"token": token}
+
+    def update(self, result: dict, state: State) -> State:
+        return state.update(response=result.get("token", ""))
+
+
+def test_streaming_action_end_to_end_writes_timing(tmpdir):
+    """Integration test: run a streaming action through ApplicationBuilder with
+    a LocalTrackingClient and verify that the end_stream log entry contains
+    non-null timing fields."""
+    app_id = str(uuid.uuid4())
+    log_dir = os.path.join(tmpdir, "tracking")
+    project_name = "test_streaming_timing"
+
+    tracker = LocalTrackingClient(project=project_name, storage_dir=log_dir)
+    app = (
+        ApplicationBuilder()
+        .with_state(prompt="hello world test", response="")
+        .with_actions(generate=_SimpleStreamingAction())
+        .with_transitions()
+        .with_entrypoint("generate")
+        .with_tracker(tracker)
+        .with_identifiers(app_id=app_id)
+        .build()
+    )
+
+    action_, streaming_container = app.stream_result(halt_after=["generate"])
+    for _ in streaming_container:
+        time.sleep(0.01)  # simulate consumer processing
+    streaming_container.get()
+
+    # Read the log file and find the end_stream entry
+    log_path = os.path.join(log_dir, project_name, app_id, LocalTrackingClient.LOG_FILENAME)
+    assert os.path.exists(log_path)
+    with open(log_path) as f:
+        log_lines = [json.loads(line) for line in f.readlines()]
+
+    end_stream_entries = [
+        EndStreamModel.model_validate(line) for line in log_lines if line["type"] == "end_stream"
+    ]
+    assert len(end_stream_entries) == 1
+    end_stream = end_stream_entries[0]
+
+    # Verify timing fields are populated (not None)
+    assert end_stream.generation_time_ms is not None
+    assert (
+        end_stream.generation_time_ms > 0
+    ), "generation_time_ms should be > 0 (we slept in stream_run)"
+    assert end_stream.consumer_time_ms is not None
+    assert (
+        end_stream.consumer_time_ms > 0
+    ), "consumer_time_ms should be > 0 (we slept between items)"
+    assert end_stream.first_item_time_ms is not None
+    assert end_stream.first_item_time_ms > 0, "first_item_time_ms (TTFT) should be > 0"
+    # items_streamed is tracked by the existing post_stream_item hook, which
+    # may not count all yields depending on the streaming container semantics.
+    assert end_stream.items_streamed >= 1
+
+
+async def test_async_streaming_action_end_to_end_writes_timing(tmpdir):
+    """Async variant: verify timing fields appear in end_stream log entry."""
+
+    @streaming_action(reads=["prompt"], writes=["response"])
+    async def async_generate(state: State):
+        tokens = state["prompt"].split()
+        buffer = []
+        for token in tokens:
+            await asyncio.sleep(0.01)
+            buffer.append(token)
+            yield {"token": token}, None
+        yield {"token": ""}, state.update(response=" ".join(buffer))
+
+    app_id = str(uuid.uuid4())
+    log_dir = os.path.join(tmpdir, "tracking")
+    project_name = "test_async_streaming_timing"
+
+    tracker = LocalTrackingClient(project=project_name, storage_dir=log_dir)
+    app = (
+        ApplicationBuilder()
+        .with_state(prompt="async streaming test tokens", response="")
+        .with_actions(generate=async_generate)
+        .with_transitions()
+        .with_entrypoint("generate")
+        .with_tracker(tracker)
+        .with_identifiers(app_id=app_id)
+        .build()
+    )
+
+    action_, streaming_container = await app.astream_result(halt_after=["generate"])
+    async for _ in streaming_container:
+        await asyncio.sleep(0.01)
+    await streaming_container.get()
+
+    log_path = os.path.join(log_dir, project_name, app_id, LocalTrackingClient.LOG_FILENAME)
+    assert os.path.exists(log_path)
+    with open(log_path) as f:
+        log_lines = [json.loads(line) for line in f.readlines()]
+
+    end_stream_entries = [
+        EndStreamModel.model_validate(line) for line in log_lines if line["type"] == "end_stream"
+    ]
+    assert len(end_stream_entries) == 1
+    end_stream = end_stream_entries[0]
+
+    assert end_stream.generation_time_ms is not None
+    assert end_stream.generation_time_ms > 0
+    assert end_stream.consumer_time_ms is not None
+    assert end_stream.consumer_time_ms > 0
+    assert end_stream.first_item_time_ms is not None
+    assert end_stream.first_item_time_ms > 0
+    assert end_stream.items_streamed >= 1

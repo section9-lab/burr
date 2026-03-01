@@ -41,4 +41,8 @@ Reference for the various useful methods:
 .. autoclass:: burr.integrations.opentelemetry.OpenTelemetryBridge
     :members:
 
+.. autoclass:: burr.integrations.opentelemetry.StreamingTelemetryMode
+    :members:
+    :undoc-members:
+
 .. autofunction:: burr.integrations.opentelemetry.init_instruments

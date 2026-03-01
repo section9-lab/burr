@@ -500,12 +500,26 @@ class S3TrackingClient(SyncTrackingClient):
         **future_kwargs: Any,
     ):
         stream_state = self.stream_state[app_id, action, partition_key]
+        # Convert nanosecond timing accumulated by pre/post_stream_generate
+        # into millisecond floats for the EndStreamModel. If stream_start_ns
+        # is None, the generate hooks never fired, so we leave timing as None.
+        generation_time_ms = None
+        consumer_time_ms = None
+        first_item_time_ms = None
+        if stream_state.stream_start_ns is not None:
+            generation_time_ms = stream_state.generation_time_ns / 1_000_000
+            consumer_time_ms = stream_state.consumer_time_ns / 1_000_000
+            if stream_state.first_item_time_ns is not None:
+                first_item_time_ms = stream_state.first_item_time_ns / 1_000_000
         self.submit_log_event(
             EndStreamModel(
                 action_sequence_id=sequence_id,
                 span_id=None,
                 end_time=system.now(),
                 items_streamed=stream_state.count,
+                generation_time_ms=generation_time_ms,
+                consumer_time_ms=consumer_time_ms,
+                first_item_time_ms=first_item_time_ms,
             ),
             app_id,
             partition_key,

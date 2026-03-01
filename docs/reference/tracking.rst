@@ -29,3 +29,18 @@ Rather, you should use this through/in conjunction with :py:meth:`burr.core.appl
    :members:
 
    .. automethod:: __init__
+
+Streaming Timing
+~~~~~~~~~~~~~~~~
+
+For streaming actions, the tracker automatically accumulates timing data by implementing
+``PreStreamGenerateHook`` and ``PostStreamGenerateHook``. When a streaming action completes,
+the ``end_stream`` log entry includes the following optional timing fields:
+
+- ``generation_time_ms`` — Sum of time spent inside the generator producing items (excludes consumer wait time).
+- ``consumer_time_ms`` — Sum of time the consumer spent processing yielded items between yields.
+- ``first_item_time_ms`` — Time from stream start to first item produced (time to first token / TTFT).
+
+These fields are ``null`` when the streaming timing hooks have not fired (e.g. old log files or
+non-instrumented generators). The Burr UI renders these fields in the step detail view when
+available, falling back to the legacy throughput calculation otherwise.

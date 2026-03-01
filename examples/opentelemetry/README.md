@@ -27,6 +27,19 @@ We have two modes:
 2. Log Burr to OpenTelemetry
 
 See [notebook.ipynb](./notebook.ipynb) for a simple overview.
-See [application.py](./application.py) for the full code
+See [application.py](./application.py) for the full code.
+
+## Streaming Telemetry
+
+For streaming actions, the `OpenTelemetryBridge` supports four configurable
+telemetry modes via `StreamingTelemetryMode`:
+
+- **SINGLE_SPAN** (default) — one action span with streaming attributes (generation time, consumer time, TTFT)
+- **EVENT** — no action span, single summary event on the method span
+- **CHUNK_SPANS** — per-yield child spans measuring generation time only
+- **SINGLE_AND_CHUNK_SPANS** — action span with attributes + per-yield child spans
+
+See [streaming_telemetry_modes.py](./streaming_telemetry_modes.py) for a runnable
+demo exercising all four modes with the console exporter.
 
 See the [documentation](https://burr.dagworks.io/concepts/additional-visibility/#open-telemetry) for more info

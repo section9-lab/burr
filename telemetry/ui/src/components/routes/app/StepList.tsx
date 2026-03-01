@@ -892,9 +892,27 @@ const StepSubTable = (props: {
               new Date(firstStream?.first_item_time).getTime()
             : undefined;
           const numStreamed = streamModel.items_streamed;
-          // const name = ellapsedStreamTime ? `last token (throughput=${ellapsedStreamTime/streamModel.items_streamed} ms/token)` : 'last token';
-          // const name = `throughput: ${(ellapsedStreamTime || 0) / numStreamed} ms/token (${numStreamed} tokens/${ellapsedStreamTime}ms)`;
-          const name = `throughput: ${((ellapsedStreamTime || 0) / numStreamed).toFixed(1)} ms/token (${numStreamed}/${ellapsedStreamTime}ms)`;
+          // Build a descriptive name that includes generation/consumer timing
+          // when available (from the new PreStreamGenerateHook/PostStreamGenerateHook
+          // timing accumulation), falling back to the legacy throughput calculation.
+          const genTime = streamModel.generation_time_ms;
+          const consTime = streamModel.consumer_time_ms;
+          const ttftTime = streamModel.first_item_time_ms;
+          let name: string;
+          if (
+            genTime !== null &&
+            genTime !== undefined &&
+            consTime !== null &&
+            consTime !== undefined
+          ) {
+            const ttft =
+              ttftTime !== null && ttftTime !== undefined
+                ? ` · TTFT: ${ttftTime.toFixed(0)}ms`
+                : '';
+            name = `gen: ${genTime.toFixed(0)}ms · consumer: ${consTime.toFixed(0)}ms · ${numStreamed} items${ttft}`;
+          } else {
+            name = `throughput: ${((ellapsedStreamTime || 0) / numStreamed).toFixed(1)} ms/token (${numStreamed}/${ellapsedStreamTime}ms)`;
+          }
           return (
             <StepSubTableRow
               key={`streaming-${i}`}

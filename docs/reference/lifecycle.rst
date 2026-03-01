@@ -68,6 +68,18 @@ and add instances to the application builder to customize your state machines's 
 .. autoclass:: burr.lifecycle.base.PostApplicationExecuteCallHookAsync
     :members:
 
+.. autoclass:: burr.lifecycle.base.PreStreamGenerateHook
+    :members:
+
+.. autoclass:: burr.lifecycle.base.PreStreamGenerateHookAsync
+    :members:
+
+.. autoclass:: burr.lifecycle.base.PostStreamGenerateHook
+    :members:
+
+.. autoclass:: burr.lifecycle.base.PostStreamGenerateHookAsync
+    :members:
+
 These hooks are available for you to use:
 
 .. autoclass:: burr.lifecycle.default.StateAndResultsFullLogger
