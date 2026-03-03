@@ -243,9 +243,9 @@ be consistent with the asynchronous method. If you're using the old version, the
 2. All intermediate results should be yielded as ``yield {'response': delta}, None`` instead of ``yield {'response': delta}``.
 3. The final result will be a ``yield`` instead of a ``return``
 
------------------------
+-------------------------
 Telemetry & Observability
------------------------
+-------------------------
 
 Streaming actions are instrumented with lifecycle hooks that bracket each generator
 yield. This enables two forms of observability:
