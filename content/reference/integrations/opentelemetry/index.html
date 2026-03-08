@@ -327,7 +327,6 @@ s=d.getElementsByTagName('script')[0];
 <li class="toctree-l3"><a class="reference internal" href="../ray/">Ray</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../telemetry/">Usage analytics + data privacy</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../contributing/">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -417,34 +416,16 @@ s=d.getElementsByTagName('script')[0];
 <p>Reference for the various useful methods:</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.opentelemetry.</span></span><span class="sig-name descname"><span class="pre">OpenTelemetryBridge</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">tracer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">tracer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tracer</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">streaming_telemetry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.integrations.opentelemetry.StreamingTelemetryMode" title="burr.integrations.opentelemetry.StreamingTelemetryMode"><span class="pre">StreamingTelemetryMode</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">StreamingTelemetryMode.SINGLE_SPAN</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge" title="Link to this definition">¶</a></dt>
-<dd><p>Lifecycle adapter that maps Burr execution events to OpenTelemetry spans and events.</p>
-<p><strong>How it works</strong></p>
-<p>The bridge implements Burr lifecycle hooks to create a span hierarchy that mirrors the
-execution structure:</p>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.opentelemetry.</span></span><span class="sig-name descname"><span class="pre">OpenTelemetryBridge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tracer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tracer</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge" title="Link to this definition">¶</a></dt>
+<dd><p>Adapter to log Burr events to OpenTelemetry. At a high level, this works as follows:</p>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pre_run_execute_call</span></code> / <code class="docutils literal notranslate"><span class="pre">post_run_execute_call</span></code> — creates a top-level <strong>method span</strong>
-for the application method being called (e.g. <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">astream_result</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pre_run_step</span></code> / <code class="docutils literal notranslate"><span class="pre">post_run_step</span></code> — creates an <strong>action span</strong> as a child of the
-method span. For streaming actions, behavior depends on the <code class="docutils literal notranslate"><span class="pre">streaming_telemetry</span></code> mode.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pre_start_span</span></code> / <code class="docutils literal notranslate"><span class="pre">post_end_span</span></code> — creates <strong>sub-action spans</strong> for user-defined
-visibility spans (via <code class="docutils literal notranslate"><span class="pre">TracerFactory</span></code> / <code class="docutils literal notranslate"><span class="pre">__tracer</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">do_log_attributes</span></code> — sets OTel attributes on the current span.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pre_stream_generate</span></code> / <code class="docutils literal notranslate"><span class="pre">post_stream_generate</span></code> — for streaming actions, optionally
-creates per-yield <strong>chunk spans</strong> and/or accumulates timing data for a summary event.</p></li>
+<li><p>On any of the start/pre hooks (pre_run_execute_call, pre_run_step, pre_start_span), we start a new span</p></li>
+<li><p>On any of the post ones we exit the span, accounting for the error (setting it if needed)</p></li>
+<li><p>On do_log_attributes, we log the attributes to the current span – these are serialized using the serde module</p></li>
 </ol>
-<p>All spans are managed via a ContextVar-based token stack (<code class="docutils literal notranslate"><span class="pre">token_stack</span></code>) to correctly
-handle nesting across sync and async execution.</p>
-<p><strong>Usage</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># replace with instructions from your preferred vendor</span>
+<p>This works by logging to OpenTelemetry, and setting the span processor to be the right one (that knows about the tracker).</p>
+<p>You can use this as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># replace with instructions from your prefered vendor</span>
 <span class="n">my_vendor_library_or_tracer_provider</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="p">(</span>
@@ -456,196 +437,43 @@ handle nesting across sync and async execution.</p>
     <span class="o">.</span><span class="n">build</span><span class="p">()</span>
 <span class="p">)</span>
 
-<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>  <span class="c1"># will log to OpenTelemetry</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="c1"># will log to OpenTelemetry</span>
 </pre></div>
 </div>
-<p><strong>Streaming telemetry modes</strong></p>
-<p>The <code class="docutils literal notranslate"><span class="pre">streaming_telemetry</span></code> parameter controls how streaming actions are instrumented.
-Non-streaming actions are unaffected — they always produce a single action span.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.SINGLE_SPAN</span></code> (default): A single action span covers the full
-generator lifetime (including consumer wait time). Streaming <strong>attributes</strong> are set on
-the span with the generation/consumer timing breakdown:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">stream.generation_time_ms</span></code> — time spent inside the generator producing items</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">stream.consumer_time_ms</span></code> — time the consumer spent processing yielded items</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">stream.iteration_count</span></code> — number of items yielded</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">stream.first_item_time_ms</span></code> — time to first item (TTFT)</p></li>
-</ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.EVENT</span></code>: No action span. A <code class="docutils literal notranslate"><span class="pre">stream_completed</span></code> (or
-<code class="docutils literal notranslate"><span class="pre">stream_error</span></code>) span event is added to the <strong>method span</strong> with the timing summary
-(including <code class="docutils literal notranslate"><span class="pre">stream.total_time_ms</span></code> since there is no action span to carry duration).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.CHUNK_SPANS</span></code>: No action span. A child span
-(<code class="docutils literal notranslate"><span class="pre">{action}::chunk_{N}</span></code>) is created for each generator yield under the method span.
-Each chunk span measures only generation time (excludes consumer processing time).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS</span></code>: Combines <code class="docutils literal notranslate"><span class="pre">SINGLE_SPAN</span></code> and <code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code> — the
-action span (with streaming attributes) plus per-yield chunk spans as its children.</p></li>
-</ul>
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.do_log_attributes">
-<span class="sig-name descname"><span class="pre">do_log_attributes</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.do_log_attributes" title="Link to this definition">¶</a></dt>
-<dd><p>Sets key-value attributes on the current OTel span.</p>
-<p>Values are serialized via <code class="xref py py-func docutils literal notranslate"><span class="pre">convert_to_otel_attribute()</span></code> to ensure they are
-OTel-compatible types (str, bool, int, float, or homogeneous sequences thereof).</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.post_end_span">
-<span class="sig-name descname"><span class="pre">post_end_span</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../visibility/#burr.visibility.tracing.ActionSpan" title="burr.visibility.tracing.ActionSpan"><span class="pre">ActionSpan</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_end_span" title="Link to this definition">¶</a></dt>
-<dd><p>Closes a sub-action span opened by <a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_start_span" title="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_start_span"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pre_start_span()</span></code></a>.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_execute_call">
-<span class="sig-name descname"><span class="pre">post_run_execute_call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Exception</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_execute_call" title="Link to this definition">¶</a></dt>
-<dd><p>Closes the top-level method span opened by <a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_execute_call" title="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_execute_call"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pre_run_execute_call()</span></code></a>.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step">
 <span class="sig-name descname"><span class="pre">post_run_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Exception</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step" title="Link to this definition">¶</a></dt>
-<dd><p>Closes the action span and, for streaming actions, emits summary telemetry.</p>
-<p>Behavior depends on mode:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">SINGLE_SPAN</span></code> / <code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code>: Sets streaming attributes on the action span, then
-closes it.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">EVENT</span></code>: Emits a <code class="docutils literal notranslate"><span class="pre">stream_completed</span></code> (or <code class="docutils literal notranslate"><span class="pre">stream_error</span></code>) span event on the
-method span (the action span was skipped). Resets the skipped flag.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code>: The action span was skipped; just resets the flag.</p></li>
+<dd><p>Run after a step is executed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> – State after step execution</p></li>
+<li><p><strong>action</strong> – Action that was executed</p></li>
+<li><p><strong>result</strong> – Result of the action</p></li>
+<li><p><strong>sequence_id</strong> – Sequence ID of the action</p></li>
+<li><p><strong>exception</strong> – Exception that was raised</p></li>
+<li><p><strong>future_kwargs</strong> – Future keyword arguments</p></li>
 </ul>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.post_stream_generate">
-<span class="sig-name descname"><span class="pre">post_stream_generate</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">item_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">exception</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Exception</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
+</dd>
 </dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_stream_generate" title="Link to this definition">¶</a></dt>
-<dd><p>Called just after each <code class="docutils literal notranslate"><span class="pre">__next__()</span></code> / <code class="docutils literal notranslate"><span class="pre">__anext__()</span></code> returns (or raises).</p>
-<p>For modes with accumulation (<code class="docutils literal notranslate"><span class="pre">SINGLE_SPAN</span></code>, <code class="docutils literal notranslate"><span class="pre">EVENT</span></code>, <code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code>), accumulates
-generation time and updates the iteration count. When <code class="docutils literal notranslate"><span class="pre">item</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>,
-the item is counted; a <code class="docutils literal notranslate"><span class="pre">None</span></code> item signals generator exhaustion (<code class="docutils literal notranslate"><span class="pre">StopIteration</span></code>).</p>
-<p>In <code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code> or <code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code> mode, closes the chunk span opened by
-<a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_stream_generate" title="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_stream_generate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pre_stream_generate()</span></code></a>, setting an error status if <code class="docutils literal notranslate"><span class="pre">exception</span></code> is provided.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_execute_call">
-<span class="sig-name descname"><span class="pre">pre_run_execute_call</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../lifecycle/#burr.lifecycle.base.ExecuteMethod" title="burr.lifecycle.base.ExecuteMethod"><span class="pre">ExecuteMethod</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_execute_call" title="Link to this definition">¶</a></dt>
-<dd><p>Opens the top-level <strong>method span</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">astream_result</span></code>).</p>
-<p>This is the outermost span in the Burr trace hierarchy. Action spans and chunk
-spans are nested under it.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step">
 <span class="sig-name descname"><span class="pre">pre_run_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../actions/#burr.core.action.Action" title="burr.core.action.Action"><span class="pre">Action</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step" title="Link to this definition">¶</a></dt>
-<dd><p>Opens an <strong>action span</strong> for the step about to execute.</p>
-<p>For streaming actions in <code class="docutils literal notranslate"><span class="pre">EVENT</span></code> or <code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code> mode, the action span is
-skipped. In <code class="docutils literal notranslate"><span class="pre">SINGLE_SPAN</span></code> and <code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code> modes, the action span is created normally.</p>
-<p>For all modes except <code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code>, a <code class="xref py py-class docutils literal notranslate"><span class="pre">_StreamingAccumulator</span></code> is initialized
-to collect timing data across generator yields.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_start_span">
-<span class="sig-name descname"><span class="pre">pre_start_span</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../visibility/#burr.visibility.tracing.ActionSpan" title="burr.visibility.tracing.ActionSpan"><span class="pre">ActionSpan</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_start_span" title="Link to this definition">¶</a></dt>
-<dd><p>Opens a <strong>sub-action span</strong> for a user-defined visibility span.</p>
-<p>These are created by the <code class="docutils literal notranslate"><span class="pre">TracerFactory</span></code> (<code class="docutils literal notranslate"><span class="pre">__tracer</span></code>) context manager inside
-actions, and are nested under the current action span.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.OpenTelemetryBridge.pre_stream_generate">
-<span class="sig-name descname"><span class="pre">pre_stream_generate</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">item_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">future_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_stream_generate" title="Link to this definition">¶</a></dt>
-<dd><p>Called just before each <code class="docutils literal notranslate"><span class="pre">__next__()</span></code> / <code class="docutils literal notranslate"><span class="pre">__anext__()</span></code> on the generator.</p>
-<p>For modes with accumulation (<code class="docutils literal notranslate"><span class="pre">SINGLE_SPAN</span></code>, <code class="docutils literal notranslate"><span class="pre">EVENT</span></code>, <code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code>), records the
-start of generation time and accumulates consumer time (the gap between the previous
-<code class="docutils literal notranslate"><span class="pre">post_stream_generate</span></code> and now).</p>
-<p>In <code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code> or <code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code> mode, opens a child span named
-<code class="docutils literal notranslate"><span class="pre">{action}::chunk_{item_index}</span></code>.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.StreamingTelemetryMode">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.opentelemetry.</span></span><span class="sig-name descname"><span class="pre">StreamingTelemetryMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.opentelemetry.StreamingTelemetryMode" title="Link to this definition">¶</a></dt>
-<dd><p>Controls how streaming actions are instrumented by the OpenTelemetryBridge.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">SINGLE_SPAN</span></code>: A single action span covers the full generator lifetime (default).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">EVENT</span></code>: A single action span plus a <code class="docutils literal notranslate"><span class="pre">stream_completed</span></code> summary span event.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">CHUNK_SPANS</span></code>: No action span. Per-yield child spans under the method span.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></code>: Action span with summary event plus per-yield child spans.</p></li>
+<dd><p>Run before a step is executed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> – State prior to step execution</p></li>
+<li><p><strong>action</strong> – Action to be executed</p></li>
+<li><p><strong>inputs</strong> – Inputs to the action</p></li>
+<li><p><strong>sequence_id</strong> – Sequence ID of the action</p></li>
+<li><p><strong>future_kwargs</strong> – Future keyword arguments</p></li>
 </ul>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.StreamingTelemetryMode.CHUNK_SPANS">
-<span class="sig-name descname"><span class="pre">CHUNK_SPANS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'chunk_spans'</span></em><a class="headerlink" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.CHUNK_SPANS" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.StreamingTelemetryMode.EVENT">
-<span class="sig-name descname"><span class="pre">EVENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'event'</span></em><a class="headerlink" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.EVENT" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS">
-<span class="sig-name descname"><span class="pre">SINGLE_AND_CHUNK_SPANS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'single_and_chunk_spans'</span></em><a class="headerlink" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_SPAN">
-<span class="sig-name descname"><span class="pre">SINGLE_SPAN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'single_span'</span></em><a class="headerlink" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_SPAN" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -748,22 +576,8 @@ available libraries.</p>
             <ul>
 <li><a class="reference internal" href="#">OpenTelemetry</a><ul>
 <li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge</span></code></a><ul>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.do_log_attributes"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.do_log_attributes()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_end_span"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.post_end_span()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_execute_call"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.post_run_execute_call()</span></code></a></li>
 <li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.post_run_step()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.post_stream_generate"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.post_stream_generate()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_execute_call"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.pre_run_execute_call()</span></code></a></li>
 <li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.pre_run_step()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_start_span"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.pre_start_span()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_stream_generate"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge.pre_stream_generate()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.StreamingTelemetryMode"><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode</span></code></a><ul>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.CHUNK_SPANS"><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.CHUNK_SPANS</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.EVENT"><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.EVENT</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS"><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_SPAN"><code class="docutils literal notranslate"><span class="pre">StreamingTelemetryMode.SINGLE_SPAN</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#burr.integrations.opentelemetry.init_instruments"><code class="docutils literal notranslate"><span class="pre">init_instruments()</span></code></a></li>

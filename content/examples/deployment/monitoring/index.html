@@ -327,7 +327,6 @@ s=d.getElementsByTagName('script')[0];
 <li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/ray/">Ray</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../reference/telemetry/">Usage analytics + data privacy</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../contributing/">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -403,10 +402,7 @@ s=d.getElementsByTagName('script')[0];
           <section id="monitoring-in-production">
 <h1>Monitoring in Production<a class="headerlink" href="#monitoring-in-production" title="Link to this heading">¶</a></h1>
 <p>Burr’s telemetry UI is meant both for debugging and running in production. It can consume <a class="reference external" href="https://burr.apache.org/reference/integrations/opentelemetry/">OpenTelemetry traces</a>,
-and has a suite of useful capabilities for debugging Burr applications. For streaming actions, the tracker
-and UI surface generation-vs-consumer timing (including time to first token), and the
-<code class="docutils literal notranslate"><span class="pre">OpenTelemetryBridge</span></code> supports <a class="reference internal" href="../../../concepts/additional-visibility/#opentelref"><span class="std std-ref">configurable streaming telemetry modes</span></a> for
-controlling span and event granularity.</p>
+and has a suite of useful capabilities for debugging Burr applications.</p>
 <p>It has two (current) implementations:</p>
 <ol class="arabic simple">
 <li><p><a class="reference external" href="https://burr.apache.org/concepts/tracking/">Local (filesystem) tracking</a> (default, for debugging or lower-scale production use-cases with a distributed file-system)</p></li>

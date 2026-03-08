@@ -325,7 +325,6 @@ s=d.getElementsByTagName('script')[0];
 <li class="toctree-l3"><a class="reference internal" href="../reference/integrations/ray/">Ray</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../reference/telemetry/">Usage analytics + data privacy</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../contributing/">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -598,8 +597,6 @@ s=d.getElementsByTagName('script')[0];
   <h2>C</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.StreamingTelemetryMode.CHUNK_SPANS">CHUNK_SPANS (burr.integrations.opentelemetry.StreamingTelemetryMode attribute)</a>
-</li>
         <li><a href="../reference/persister/#burr.core.persistence.SQLitePersister.cleanup">cleanup() (burr.core.persistence.SQLitePersister method)</a>
 
         <ul>
@@ -684,10 +681,10 @@ s=d.getElementsByTagName('script')[0];
 </li>
         <li><a href="../reference/serde/#burr.integrations.serde.langchain.deserialize_lc_document_hack">deserialize_lc_document_hack() (in module burr.integrations.serde.langchain)</a>
 </li>
-        <li><a href="../reference/serde/#burr.integrations.serde.langchain.deserialize_lc_document_with_state">deserialize_lc_document_with_state() (in module burr.integrations.serde.langchain)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="../reference/serde/#burr.integrations.serde.langchain.deserialize_lc_document_with_state">deserialize_lc_document_with_state() (in module burr.integrations.serde.langchain)</a>
+</li>
         <li><a href="../reference/serde/#burr.integrations.serde.langchain.deserialize_lc_message">deserialize_lc_message() (in module burr.integrations.serde.langchain)</a>
 </li>
         <li><a href="../reference/serde/#burr.integrations.serde.langchain.deserialize_lc_message_hack">deserialize_lc_message_hack() (in module burr.integrations.serde.langchain)</a>
@@ -695,8 +692,6 @@ s=d.getElementsByTagName('script')[0];
         <li><a href="../reference/serde/#burr.integrations.serde.pandas.deserialize_pandas_df">deserialize_pandas_df() (in module burr.integrations.serde.pandas)</a>
 </li>
         <li><a href="../reference/serde/#burr.integrations.serde.pydantic.deserialize_pydantic">deserialize_pydantic() (in module burr.integrations.serde.pydantic)</a>
-</li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.do_log_attributes">do_log_attributes() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -706,8 +701,6 @@ s=d.getElementsByTagName('script')[0];
   <h2>E</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.StreamingTelemetryMode.EVENT">EVENT (burr.integrations.opentelemetry.StreamingTelemetryMode attribute)</a>
-</li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.ExecuteMethod">ExecuteMethod (class in burr.lifecycle.base)</a>
 </li>
     </ul></td>
@@ -1061,10 +1054,6 @@ s=d.getElementsByTagName('script')[0];
           <li><a href="../reference/tracking/#burr.tracking.LocalTrackingClient.post_application_create">(burr.tracking.LocalTrackingClient method)</a>
 </li>
         </ul></li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.post_end_span">post_end_span() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
-</li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_execute_call">post_run_execute_call() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
-</li>
         <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.post_run_step">post_run_step() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
 
         <ul>
@@ -1075,8 +1064,6 @@ s=d.getElementsByTagName('script')[0];
           <li><a href="../reference/tracking/#burr.tracking.LocalTrackingClient.post_run_step">(burr.tracking.LocalTrackingClient method)</a>
 </li>
         </ul></li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.post_stream_generate">post_stream_generate() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
-</li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostApplicationCreateHook">PostApplicationCreateHook (class in burr.lifecycle.base)</a>
 </li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostApplicationExecuteCallHook">PostApplicationExecuteCallHook (class in burr.lifecycle.base)</a>
@@ -1087,19 +1074,13 @@ s=d.getElementsByTagName('script')[0];
 </li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostEndSpanHookAsync">PostEndSpanHookAsync (class in burr.lifecycle.base)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="../reference/persister/#burr.integrations.persisters.b_psycopg2.PostgreSQLPersister">PostgreSQLPersister (class in burr.integrations.persisters.b_psycopg2)</a>
 </li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostRunStepHook">PostRunStepHook (class in burr.lifecycle.base)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostRunStepHookAsync">PostRunStepHookAsync (class in burr.lifecycle.base)</a>
-</li>
-        <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostStreamGenerateHook">PostStreamGenerateHook (class in burr.lifecycle.base)</a>
-</li>
-        <li><a href="../reference/lifecycle/#burr.lifecycle.base.PostStreamGenerateHookAsync">PostStreamGenerateHookAsync (class in burr.lifecycle.base)</a>
-</li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_execute_call">pre_run_execute_call() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
 </li>
         <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_run_step">pre_run_step() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
 
@@ -1111,10 +1092,6 @@ s=d.getElementsByTagName('script')[0];
           <li><a href="../reference/tracking/#burr.tracking.LocalTrackingClient.pre_run_step">(burr.tracking.LocalTrackingClient method)</a>
 </li>
         </ul></li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_start_span">pre_start_span() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
-</li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.OpenTelemetryBridge.pre_stream_generate">pre_stream_generate() (burr.integrations.opentelemetry.OpenTelemetryBridge method)</a>
-</li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PreApplicationExecuteCallHook">PreApplicationExecuteCallHook (class in burr.lifecycle.base)</a>
 </li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PreApplicationExecuteCallHookAsync">PreApplicationExecuteCallHookAsync (class in burr.lifecycle.base)</a>
@@ -1126,10 +1103,6 @@ s=d.getElementsByTagName('script')[0];
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PreStartSpanHook">PreStartSpanHook (class in burr.lifecycle.base)</a>
 </li>
         <li><a href="../reference/lifecycle/#burr.lifecycle.base.PreStartSpanHookAsync">PreStartSpanHookAsync (class in burr.lifecycle.base)</a>
-</li>
-        <li><a href="../reference/lifecycle/#burr.lifecycle.base.PreStreamGenerateHook">PreStreamGenerateHook (class in burr.lifecycle.base)</a>
-</li>
-        <li><a href="../reference/lifecycle/#burr.lifecycle.base.PreStreamGenerateHookAsync">PreStreamGenerateHookAsync (class in burr.lifecycle.base)</a>
 </li>
         <li><a href="../reference/actions/#burr.core.action.action.pydantic">pydantic() (burr.core.action.action static method)</a>
 
@@ -1285,14 +1258,10 @@ s=d.getElementsByTagName('script')[0];
 </li>
         <li><a href="../reference/integrations/ray/#burr.integrations.ray.RayExecutor.shutdown">shutdown() (burr.integrations.ray.RayExecutor method)</a>
 </li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS">SINGLE_AND_CHUNK_SPANS (burr.integrations.opentelemetry.StreamingTelemetryMode attribute)</a>
-</li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.StreamingTelemetryMode.SINGLE_SPAN">SINGLE_SPAN (burr.integrations.opentelemetry.StreamingTelemetryMode attribute)</a>
+        <li><a href="../reference/lifecycle/#burr.lifecycle.default.SlowDownHook">SlowDownHook (class in burr.lifecycle.default)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="../reference/lifecycle/#burr.lifecycle.default.SlowDownHook">SlowDownHook (class in burr.lifecycle.default)</a>
-</li>
         <li><a href="../reference/application/#burr.core.application.Application.spawning_parent_pointer">spawning_parent_pointer (burr.core.application.Application property)</a>
 </li>
         <li><a href="../reference/persister/#burr.core.persistence.SQLitePersister">SQLitePersister (class in burr.core.persistence)</a>
@@ -1348,8 +1317,6 @@ s=d.getElementsByTagName('script')[0];
         <li><a href="../reference/actions/#burr.core.action.StreamingAction">StreamingAction (class in burr.core.action)</a>
 </li>
         <li><a href="../reference/actions/#burr.core.action.StreamingResultContainer">StreamingResultContainer (class in burr.core.action)</a>
-</li>
-        <li><a href="../reference/integrations/opentelemetry/#burr.integrations.opentelemetry.StreamingTelemetryMode">StreamingTelemetryMode (class in burr.integrations.opentelemetry)</a>
 </li>
         <li><a href="../reference/serde/#burr.core.serde.StringDispatch">StringDispatch (class in burr.core.serde)</a>
 </li>

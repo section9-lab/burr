@@ -308,48 +308,6 @@ it as you see fit).
 
 With this you can log to any OpenTelemetry provider.
 
-Streaming Telemetry Modes
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When using streaming actions with the ``OpenTelemetryBridge``, you can control how
-streaming telemetry is emitted via the ``streaming_telemetry`` parameter. This accepts
-a :py:class:`StreamingTelemetryMode <burr.integrations.opentelemetry.StreamingTelemetryMode>` enum value:
-
-.. code-block:: python
-
-    from burr.integrations.opentelemetry import OpenTelemetryBridge, StreamingTelemetryMode
-
-    # Default: one action span with streaming attributes (generation time, consumer time, TTFT)
-    bridge = OpenTelemetryBridge(tracer=tracer, streaming_telemetry=StreamingTelemetryMode.SINGLE_SPAN)
-
-    # Lightest-weight: no action span, single summary event on the method span
-    bridge = OpenTelemetryBridge(tracer=tracer, streaming_telemetry=StreamingTelemetryMode.EVENT)
-
-    # Per-yield spans: one child span per generator yield, measuring generation time only
-    bridge = OpenTelemetryBridge(tracer=tracer, streaming_telemetry=StreamingTelemetryMode.CHUNK_SPANS)
-
-    # Maximum visibility: action span with attributes + per-yield child spans
-    bridge = OpenTelemetryBridge(tracer=tracer, streaming_telemetry=StreamingTelemetryMode.SINGLE_AND_CHUNK_SPANS)
-
-The four modes are:
-
-- **SINGLE_SPAN** (default) — The action span covers the full generator lifetime. Span attributes
-  provide the generation-vs-consumer time breakdown (``stream.generation_time_ms``,
-  ``stream.consumer_time_ms``, ``stream.iteration_count``, ``stream.first_item_time_ms``).
-  This is backwards-compatible with the pre-existing behavior.
-- **EVENT** — No action span is created. A single ``stream_completed`` event is added to the
-  method span with the same timing attributes. This is the lightest-weight option.
-- **CHUNK_SPANS** — No action span. One child span per generator yield, each measuring only
-  the generation time for that item.
-- **SINGLE_AND_CHUNK_SPANS** — Combines SINGLE_SPAN and CHUNK_SPANS: the action span with
-  streaming attributes, plus per-yield child spans nested under it.
-
-Non-streaming actions are unaffected by this setting — they always get an action span regardless
-of the mode.
-
-See the `streaming_telemetry_modes.py example <https://github.com/apache/burr/tree/main/examples/opentelemetry/streaming_telemetry_modes.py>`_
-for a runnable demo of all four modes.
-
 
 Instrumenting libraries
 -----------------------

@@ -242,21 +242,3 @@ be consistent with the asynchronous method. If you're using the old version, the
 1. The return type of the streaming action should be ``Generator[Tuple[dict, Optional[State], None, None]]`` instead of ``Generator[dict, None, Tuple[dict, State]]``.
 2. All intermediate results should be yielded as ``yield {'response': delta}, None`` instead of ``yield {'response': delta}``.
 3. The final result will be a ``yield`` instead of a ``return``
-
--------------------------
-Telemetry & Observability
--------------------------
-
-Streaming actions are instrumented with lifecycle hooks that bracket each generator
-yield. This enables two forms of observability:
-
-**OpenTelemetry** — The :py:class:`OpenTelemetryBridge <burr.integrations.opentelemetry.OpenTelemetryBridge>`
-supports configurable streaming telemetry modes (``SINGLE_SPAN``, ``EVENT``, ``CHUNK_SPANS``,
-``SINGLE_AND_CHUNK_SPANS``) that control how streaming spans and events are emitted. These
-modes provide timing attributes such as generation time, consumer time, iteration count, and
-time to first token (TTFT). See :ref:`Streaming Telemetry Modes <opentelref>` for details.
-
-**Burr Tracker** — The :py:class:`LocalTrackingClient <burr.tracking.LocalTrackingClient>` (and
-``S3TrackingClient``) automatically accumulate generation-vs-consumer timing for streaming
-actions and write it to the ``end_stream`` log entry. The Burr UI displays this data in the
-step detail view, showing the generation/consumer time split and TTFT.

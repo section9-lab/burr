@@ -22,10 +22,7 @@ Monitoring in Production
 ------------------------
 
 Burr's telemetry UI is meant both for debugging and running in production. It can consume `OpenTelemetry traces <https://burr.apache.org/reference/integrations/opentelemetry/>`_,
-and has a suite of useful capabilities for debugging Burr applications. For streaming actions, the tracker
-and UI surface generation-vs-consumer timing (including time to first token), and the
-``OpenTelemetryBridge`` supports :ref:`configurable streaming telemetry modes <opentelref>` for
-controlling span and event granularity.
+and has a suite of useful capabilities for debugging Burr applications.
 
 It has two (current) implementations:
 

@@ -327,7 +327,6 @@ s=d.getElementsByTagName('script')[0];
 <li class="toctree-l3"><a class="reference internal" href="../integrations/ray/">Ray</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../telemetry/">Usage analytics + data privacy</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../contributing/">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -639,20 +638,6 @@ as the last step.</p>
 
 </dd></dl>
 
-<section id="streaming-timing">
-<h2>Streaming Timing<a class="headerlink" href="#streaming-timing" title="Link to this heading">¶</a></h2>
-<p>For streaming actions, the tracker automatically accumulates timing data by implementing
-<code class="docutils literal notranslate"><span class="pre">PreStreamGenerateHook</span></code> and <code class="docutils literal notranslate"><span class="pre">PostStreamGenerateHook</span></code>. When a streaming action completes,
-the <code class="docutils literal notranslate"><span class="pre">end_stream</span></code> log entry includes the following optional timing fields:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">generation_time_ms</span></code> — Sum of time spent inside the generator producing items (excludes consumer wait time).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">consumer_time_ms</span></code> — Sum of time the consumer spent processing yielded items between yields.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">first_item_time_ms</span></code> — Time from stream start to first item produced (time to first token / TTFT).</p></li>
-</ul>
-<p>These fields are <code class="docutils literal notranslate"><span class="pre">null</span></code> when the streaming timing hooks have not fired (e.g. old log files or
-non-instrumented generators). The Burr UI renders these fields in the step detail view when
-available, falling back to the legacy throughput calculation otherwise.</p>
-</section>
 </section>
 
         </article>
@@ -736,7 +721,6 @@ available, falling back to the legacy throughput calculation otherwise.</p>
 <li><a class="reference internal" href="#burr.tracking.LocalTrackingClient.pre_run_step"><code class="docutils literal notranslate"><span class="pre">LocalTrackingClient.pre_run_step()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#streaming-timing">Streaming Timing</a></li>
 </ul>
 </li>
 </ul>
