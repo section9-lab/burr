@@ -585,6 +585,11 @@ The result is just a key/value dictionary.</p>
 <span class="n">when</span><span class="p">(</span><span class="n">tags__contains</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">)</span>   <span class="c1"># &quot;python&quot; in state[&quot;tags&quot;]</span>
 </pre></div>
 </div>
+<p>Identity operators:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">value__is</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>            <span class="c1"># state[&quot;value&quot;] is None</span>
+<span class="n">when</span><span class="p">(</span><span class="n">value__isnot</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>         <span class="c1"># state[&quot;value&quot;] is not None</span>
+</pre></div>
+</div>
 <p>Multiple conditions are ANDed together:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">age__gte</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;active&quot;</span><span class="p">)</span>  <span class="c1"># age &gt;= 18 AND status == &quot;active&quot;</span>
 </pre></div>
