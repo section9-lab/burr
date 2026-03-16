@@ -563,15 +563,43 @@ The result is just a key/value dictionary.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="burr.core.action.Condition.when">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">when</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.core.action.Condition.when" title="Link to this definition">¶</a></dt>
-<dd><p>Returns a condition that checks if the given keys are in the
-state and equal to the given values.</p>
+<dd><p>Returns a condition that checks state values using optional operators.</p>
 <p>You can also refer to this as <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">burr.core</span> <span class="pre">import</span> <span class="pre">when</span></code> in the API.</p>
+<p>Basic equality (unchanged from original):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>            <span class="c1"># state[&quot;foo&quot;] == &quot;bar&quot;</span>
+<span class="n">when</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="n">baz</span><span class="o">=</span><span class="s2">&quot;qux&quot;</span><span class="p">)</span> <span class="c1"># state[&quot;foo&quot;] == &quot;bar&quot; AND state[&quot;baz&quot;] == &quot;qux&quot;</span>
+</pre></div>
+</div>
+<p>Comparison operators via <code class="docutils literal notranslate"><span class="pre">__</span></code> suffix:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">age__gt</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>           <span class="c1"># state[&quot;age&quot;] &gt; 18</span>
+<span class="n">when</span><span class="p">(</span><span class="n">age__gte</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>          <span class="c1"># state[&quot;age&quot;] &gt;= 18</span>
+<span class="n">when</span><span class="p">(</span><span class="n">age__lt</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>           <span class="c1"># state[&quot;age&quot;] &lt; 18</span>
+<span class="n">when</span><span class="p">(</span><span class="n">age__lte</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>          <span class="c1"># state[&quot;age&quot;] &lt;= 18</span>
+<span class="n">when</span><span class="p">(</span><span class="n">age__ne</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>            <span class="c1"># state[&quot;age&quot;] != 0</span>
+<span class="n">when</span><span class="p">(</span><span class="n">age__eq</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>           <span class="c1"># state[&quot;age&quot;] == 18  (explicit)</span>
+</pre></div>
+</div>
+<p>Membership operators:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">status__in</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">])</span>     <span class="c1"># state[&quot;status&quot;] in [&quot;a&quot;, &quot;b&quot;]</span>
+<span class="n">when</span><span class="p">(</span><span class="n">status__notin</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">])</span>  <span class="c1"># state[&quot;status&quot;] not in [&quot;x&quot;, &quot;y&quot;]</span>
+<span class="n">when</span><span class="p">(</span><span class="n">tags__contains</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">)</span>   <span class="c1"># &quot;python&quot; in state[&quot;tags&quot;]</span>
+</pre></div>
+</div>
+<p>Identity operators:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">value__is</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>            <span class="c1"># state[&quot;value&quot;] is None</span>
+<span class="n">when</span><span class="p">(</span><span class="n">value__isnot</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>         <span class="c1"># state[&quot;value&quot;] is not None</span>
+</pre></div>
+</div>
+<p>Multiple conditions are ANDed together:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">when</span><span class="p">(</span><span class="n">age__gte</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;active&quot;</span><span class="p">)</span>  <span class="c1"># age &gt;= 18 AND status == &quot;active&quot;</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>kwargs</strong> – Keyword arguments of keys and values to check – will be an AND condition</p>
+<dd class="field-odd"><p><strong>kwargs</strong> – Keyword arguments with optional <code class="docutils literal notranslate"><span class="pre">__operator</span></code> suffixes</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A condition that checks if the given keys are in the state and equal to the given values</p>
+<dd class="field-even"><p>A condition that checks all specified constraints (AND)</p>
 </dd>
 </dl>
 </dd></dl>

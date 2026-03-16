@@ -425,6 +425,37 @@ You can think of them as edges in a graph.</p>
 <span class="p">)</span>
 </pre></div>
 </div>
+<p><code class="docutils literal notranslate"><span class="pre">when()</span></code> also supports comparison operators via Django-style <code class="docutils literal notranslate"><span class="pre">__</span></code> suffixes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">burr.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">when</span>
+<span class="n">with_transitions</span><span class="p">(</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;adult&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">age__gte</span><span class="o">=</span><span class="mi">18</span><span class="p">)),</span>       <span class="c1"># age &gt;= 18</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;child&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">age__lt</span><span class="o">=</span><span class="mi">18</span><span class="p">)),</span>         <span class="c1"># age &lt; 18</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">score__gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">score__lte</span><span class="o">=</span><span class="mi">100</span><span class="p">)),</span>  <span class="c1"># 0 &lt; score &lt;= 100</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;active&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">status__in</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">,</span> <span class="s2">&quot;pending&quot;</span><span class="p">])),</span>  <span class="c1"># membership</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;tagged&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">tags__contains</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">)),</span>  <span class="c1"># collection contains value</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">status__notin</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;banned&quot;</span><span class="p">,</span> <span class="s2">&quot;suspended&quot;</span><span class="p">])),</span>  <span class="c1"># not in</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;changed&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">status__ne</span><span class="o">=</span><span class="s2">&quot;initial&quot;</span><span class="p">)),</span>  <span class="c1"># not equal</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;missing&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">value__is</span><span class="o">=</span><span class="kc">None</span><span class="p">)),</span>  <span class="c1"># identity check</span>
+    <span class="p">(</span><span class="s2">&quot;check&quot;</span><span class="p">,</span> <span class="s2">&quot;present&quot;</span><span class="p">,</span> <span class="n">when</span><span class="p">(</span><span class="n">value__isnot</span><span class="o">=</span><span class="kc">None</span><span class="p">)),</span>  <span class="c1"># not-identity check</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Available operators:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">key=value</span></code> — exact equality (default, unchanged)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__eq=value</span></code> — explicit equality</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__ne=value</span></code> — not equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__gt=value</span></code> — greater than</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__gte=value</span></code> — greater than or equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__lt=value</span></code> — less than</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__lte=value</span></code> — less than or equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__in=[values]</span></code> — value is in the given collection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__notin=[values]</span></code> — value is not in the given collection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__contains=value</span></code> — collection/string in state contains the value</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__is=value</span></code> — identity check (<code class="docutils literal notranslate"><span class="pre">is</span></code>), useful for <code class="docutils literal notranslate"><span class="pre">None</span></code>/<code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key__isnot=value</span></code> — negated identity check (<code class="docutils literal notranslate"><span class="pre">is</span> <span class="pre">not</span></code>)</p></li>
+</ul>
+<p>Multiple keyword arguments are ANDed together. For more complex expressions, use <code class="docutils literal notranslate"><span class="pre">expr()</span></code>.</p>
 <p>Conditions are evaluated in the order they are specified, and the first one that evaluates to True will be the transition that is selected
 when determining which action to run next. If no condition evaluates to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the application execution will stop early.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">~</span></code> operator will invert a condition. For instance:</p>
