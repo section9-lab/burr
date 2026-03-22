@@ -500,6 +500,23 @@ This will print the URL to access the Burr UI web app.</p>
 </div>
 </section>
 </section>
+<section id="mount-burr-ui-inside-an-existing-fastapi-app">
+<h2>Mount Burr UI inside an existing FastAPI app<a class="headerlink" href="#mount-burr-ui-inside-an-existing-fastapi-app" title="Link to this heading">¶</a></h2>
+<p>You can embed the Burr UI inside an existing FastAPI application using the
+<code class="docutils literal notranslate"><span class="pre">mount_burr_ui</span></code> helper.</p>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">burr.tracking.server.run</span><span class="w"> </span><span class="kn">import</span> <span class="n">mount_burr_ui</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+
+<span class="c1"># Mount Burr UI under /burr</span>
+<span class="n">mount_burr_ui</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;/burr&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This allows you to run the Burr tracking UI alongside your own FastAPI
+application in the same server process.</p>
+</section>
 </section>
 
         </article>
@@ -579,6 +596,7 @@ This will print the URL to access the Burr UI web app.</p>
 <li><a class="reference internal" href="#launch-burr-ui-from-a-notebook">Launch Burr UI from a notebook</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mount-burr-ui-inside-an-existing-fastapi-app">Mount Burr UI inside an existing FastAPI app</a></li>
 </ul>
 </li>
 </ul>
