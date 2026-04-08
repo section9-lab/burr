@@ -193,6 +193,7 @@ burr/tracking/server/build
 examples/*/statemachine
 examples/*/*/statemachine
 .vscode
+.claude/
 
 # Terraform (see also examples/deployment/aws/terraform/.gitignore)
 **/.terraform.lock.hcl
