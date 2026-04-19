@@ -477,9 +477,26 @@ def _build_ui_artifacts() -> None:
     except Exception as e:
         _fail(f"Failed to copy build artifacts: {e}")
 
+    # Remove source maps (debug artifacts, not needed in wheel)
+    for map_file in glob.glob(os.path.join(ui_build_dir, "**", "*.map"), recursive=True):
+        os.remove(map_file)
+        print(f"    ✓ Removed source map: {os.path.basename(map_file)}")
+
     # Verify
     if not os.path.exists(ui_build_dir) or not os.listdir(ui_build_dir):
         _fail(f"UI build directory is empty: {ui_build_dir}")
+
+
+def _clean_wheel_excludes() -> None:
+    """Remove files that should not be in the wheel distribution."""
+    excludes = [
+        "burr/tracking/server/s3/deployment/terraform/.terraform.lock.hcl",
+        "burr/tracking/server/s3/deployment/terraform/.gitignore",
+    ]
+    for filepath in excludes:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            print(f"    ✓ Removed from wheel: {filepath}")
 
 
 def _prepare_wheel_contents() -> tuple[bool, bool, Optional[str]]:
@@ -550,6 +567,7 @@ def _build_wheel_from_current_dir(version: str, output_dir: str = "dist") -> str
     _build_ui_artifacts()
 
     _print_step(2, 3, "Preparing wheel contents")
+    _clean_wheel_excludes()
     copied, was_symlink, symlink_target = _prepare_wheel_contents()
 
     _print_step(3, 3, "Building wheel with flit")
