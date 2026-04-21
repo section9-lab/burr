@@ -336,6 +336,7 @@ s=d.getElementsByTagName('script')[0];
 <li class="toctree-l3"><a class="reference internal" href="../../reference/integrations/pydantic/">Pydantic</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../reference/integrations/haystack/">Haystack</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../reference/integrations/ray/">Ray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/integrations/bedrock/">Amazon Bedrock</a></li>
 </ul>
 </li>
 </ul>
@@ -505,6 +506,10 @@ framework + some other dependencies. Note you can combine installing multiple op
 </pre></div>
 </div>
 <p>This installs the server dependencies for running the UI off a filesystem.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;burr[bedrock]&quot;</span>
+</pre></div>
+</div>
+<p>This installs <code class="docutils literal notranslate"><span class="pre">boto3</span></code> for the <a class="reference internal" href="../../reference/integrations/bedrock/#bedrock-integration"><span class="std std-ref">Amazon Bedrock integration</span></a> (<code class="docutils literal notranslate"><span class="pre">BedrockAction</span></code> / <code class="docutils literal notranslate"><span class="pre">BedrockStreamingAction</span></code>).</p>
 </section>
 </section>
 

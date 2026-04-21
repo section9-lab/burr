@@ -22,12 +22,12 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../../genindex/"><link rel="search" title="Search" href="../../../search/"><link rel="next" title="OpenTelemetry" href="../opentelemetry/"><link rel="prev" title="Hamilton" href="../hamilton/">
-        <link rel="canonical" href="https://burr.apache.org/docs/reference/integrations/streamlit/">
+<link rel="index" title="Index" href="../../../genindex/"><link rel="search" title="Search" href="../../../search/"><link rel="next" title="Contributing" href="../../../contributing/"><link rel="prev" title="Ray" href="../ray/">
+        <link rel="canonical" href="https://burr.apache.org/docs/reference/integrations/bedrock/">
         <link rel="prefetch" href="../../../_static/burr_logo.svg" as="image">
 
     <link rel="shortcut icon" href="../../../_static/favicon.ico"><!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
-        <title>Streamlit - Apache Burr</title>
+        <title>Amazon Bedrock - Apache Burr</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -329,14 +329,14 @@ s=d.getElementsByTagName('script')[0];
 <li class="toctree-l2"><a class="reference internal" href="../../typing/">Typing</a></li>
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../">Integrations</a><input aria-label="Toggle navigation of Integrations" checked="" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="../hamilton/">Hamilton</a></li>
-<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Streamlit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../streamlit/">Streamlit</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../opentelemetry/">OpenTelemetry</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../traceloop/">Traceloop</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../langchain/">Langchain</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pydantic/">Pydantic</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../haystack/">Haystack</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../ray/">Ray</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../bedrock/">Amazon Bedrock</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Amazon Bedrock</a></li>
 </ul>
 </li>
 </ul>
@@ -402,132 +402,168 @@ s=d.getElementsByTagName('script')[0];
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="streamlit">
-<h1>Streamlit<a class="headerlink" href="#streamlit" title="Link to this heading">¶</a></h1>
-<p>Full Streamlit integration. Tough-points are utility functions.
-It is likely this will adapt/change over time, so it is only recommended to use this for debugging/developing.</p>
-<p>Install with pypi:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>burr<span class="o">[</span>streamlit<span class="o">]</span>
+          <section id="amazon-bedrock">
+<span id="bedrock-integration"></span><h1>Amazon Bedrock<a class="headerlink" href="#amazon-bedrock" title="Link to this heading">¶</a></h1>
+<p><a class="reference external" href="https://aws.amazon.com/bedrock/">Amazon Bedrock</a> models can be called through the
+Bedrock Runtime <strong>Converse</strong> and <strong>Converse Stream</strong> APIs using the actions below.</p>
+<p>Install the optional extra (pulls <code class="docutils literal notranslate"><span class="pre">boto3</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;burr[bedrock]&quot;</span>
 </pre></div>
 </div>
+<p>IAM permissions must allow <code class="docutils literal notranslate"><span class="pre">bedrock:InvokeModel</span></code> / streaming equivalents for your
+chosen models; see AWS documentation for your account and model IDs.</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.AppState">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">AppState</span></span><span class="sig-paren">(</span>
+<dt class="sig sig-object py" id="burr.integrations.bedrock.BedrockAction">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.bedrock.</span></span><span class="sig-name descname"><span class="pre">BedrockAction</span></span><span class="sig-paren">(</span>
 
 <dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">display_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">burr.integrations.streamlit.Record</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../application/#burr.core.application.Application" title="burr.core.application.Application"><span class="pre">Application</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">num_prior_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">model_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">input_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StateToPromptMapper</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">reads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">writes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bedrock_invoke'</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">guardrail_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">guardrail_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">inference_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
 </dl>
 
-<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.AppState" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.load_state_from_log_file">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">load_state_from_log_file</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">jsonl_log_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../application/#burr.core.application.Application" title="burr.core.application.Application"><span class="pre">Application</span></a></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#burr.integrations.streamlit.AppState" title="burr.integrations.streamlit.AppState"><span class="pre">AppState</span></a></span></span><a class="headerlink" href="#burr.integrations.streamlit.load_state_from_log_file" title="Link to this definition">¶</a></dt>
-<dd><p>Initializes the state from a log file. This must have been logged using StateAndResultFullLogger.
-Note that, currently, you must pass in an Application object (although that will be optoinal in the future).</p>
+<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.bedrock.BedrockAction" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BedrockBase</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">SingleStepAction</span></code></p>
+<p>Action that invokes Amazon Bedrock models using the Converse API.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>jsonl_log_file</strong> – Log file to load</p></li>
-<li><p><strong>app</strong> – Application object</p></li>
+<li><p><strong>model_id</strong> – Bedrock model identifier (e.g. Anthropic Claude on Bedrock).</p></li>
+<li><p><strong>input_mapper</strong> – Callable mapping <a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a> to Bedrock
+<code class="docutils literal notranslate"><span class="pre">messages</span></code> / optional <code class="docutils literal notranslate"><span class="pre">system</span></code> keys.</p></li>
+<li><p><strong>reads</strong> – State keys this action reads.</p></li>
+<li><p><strong>writes</strong> – State keys to update (typically include <code class="docutils literal notranslate"><span class="pre">response</span></code>).</p></li>
+<li><p><strong>name</strong> – Action name for the graph.</p></li>
+<li><p><strong>region</strong> – AWS region for the Bedrock runtime client (optional).</p></li>
+<li><p><strong>guardrail_id</strong> – If set, <code class="docutils literal notranslate"><span class="pre">guardrail_version</span></code> must also be set explicitly.</p></li>
+<li><p><strong>guardrail_version</strong> – Guardrail version string (use <code class="docutils literal notranslate"><span class="pre">DRAFT</span></code> only when intended).</p></li>
+<li><p><strong>inference_config</strong> – Passed as <code class="docutils literal notranslate"><span class="pre">inferenceConfig</span></code>; if omitted, defaults to
+a <code class="docutils literal notranslate"><span class="pre">maxTokens</span></code> limit. Pass an empty dict explicitly to send an empty config.</p></li>
+<li><p><strong>max_retries</strong> – Botocore retry configuration for the runtime client.</p></li>
+<li><p><strong>client</strong> – Optional pre-built <code class="docutils literal notranslate"><span class="pre">bedrock-runtime</span></code> client (for tests or injection).</p></li>
+</ul>
+</dd>
+</dl>
+<p>Use <a class="reference internal" href="#burr.integrations.bedrock.BedrockAction.run_and_update" title="burr.integrations.bedrock.BedrockAction.run_and_update"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_and_update()</span></code></a> to run the model and merge outputs into state.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="burr.integrations.bedrock.BedrockAction.run_and_update">
+<span class="sig-name descname"><span class="pre">run_and_update</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></em>,</dd>
+<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">run_kwargs</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.integrations.bedrock.BedrockAction.run_and_update" title="Link to this definition">¶</a></dt>
+<dd><p>Performs a run/update at the same time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> – State to run the action on</p></li>
+<li><p><strong>run_kwargs</strong> – Additional arguments to the function passed at runtime.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>AppState</p>
+<dd class="field-even"><p>Result of the action and the new state</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.get_state">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.get_state" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+</dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.update_state">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.integrations.streamlit.AppState" title="burr.integrations.streamlit.AppState"><span class="pre">AppState</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.update_state" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="burr.integrations.bedrock.BedrockStreamingAction">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.bedrock.</span></span><span class="sig-name descname"><span class="pre">BedrockStreamingAction</span></span><span class="sig-paren">(</span>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.render_state_machine">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">render_state_machine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.integrations.streamlit.AppState" title="burr.integrations.streamlit.AppState"><span class="pre">AppState</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.render_state_machine" title="Link to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Visualization of the current state machine. Highlights:</dt><dd><ol class="arabic simple">
-<li><p>Current node in blue (with white backgorund)</p></li>
-<li><p>Prior nodes in progressively lighter shades of blue</p></li>
-</ol>
-</dd>
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">model_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">input_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StateToPromptMapper</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">reads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">writes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bedrock_stream'</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">guardrail_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">guardrail_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">inference_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
 </dl>
-<p>Use this individually, or within the “render_explorer” view</p>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.bedrock.BedrockStreamingAction" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BedrockBase</span></code>, <a class="reference internal" href="../../actions/#burr.core.action.StreamingAction" title="burr.core.action.StreamingAction"><code class="xref py py-class docutils literal notranslate"><span class="pre">StreamingAction</span></code></a></p>
+<p>Streaming Bedrock action using the Converse Stream API.</p>
+<p>Parameters match <a class="reference internal" href="#burr.integrations.bedrock.BedrockAction" title="burr.integrations.bedrock.BedrockAction"><code class="xref py py-class docutils literal notranslate"><span class="pre">BedrockAction</span></code></a> except the default <code class="docutils literal notranslate"><span class="pre">name</span></code> is
+<code class="docutils literal notranslate"><span class="pre">bedrock_stream</span></code>. Yields chunk dicts from <a class="reference internal" href="#burr.integrations.bedrock.BedrockStreamingAction.stream_run" title="burr.integrations.bedrock.BedrockStreamingAction.stream_run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stream_run()</span></code></a> and merges the
+final response in <a class="reference internal" href="#burr.integrations.bedrock.BedrockStreamingAction.update" title="burr.integrations.bedrock.BedrockStreamingAction.update"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update()</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="burr.integrations.bedrock.BedrockStreamingAction.stream_run">
+<span class="sig-name descname"><span class="pre">stream_run</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></em>,</dd>
+<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">run_kwargs</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#burr.integrations.bedrock.BedrockStreamingAction.stream_run" title="Link to this definition">¶</a></dt>
+<dd><p>Streaming action <code class="docutils literal notranslate"><span class="pre">stream_run</span></code> is different than standard action run. It:
+1. streams in an intermediate result (the dict output)
+2. yields the final result at the end</p>
+<p>Note that the user, in this case, is responsible for joining the result.</p>
+<p>For instance, you could have:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">stream_run</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># you might want to be more efficient than simple strcat</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">query</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;prompt&#39;</span><span class="p">]):</span>
+        <span class="k">yield</span> <span class="p">{</span><span class="s1">&#39;response&#39;</span> <span class="p">:</span> <span class="n">token</span><span class="p">}</span>
+        <span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="p">{</span><span class="s1">&#39;response&#39;</span> <span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">buffer</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p>This would utilize a simple string buffer (implemented by a list) to store the results
+and then join them at the end. We return the final result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>state</strong></p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> – State to run the action on</p></li>
+<li><p><strong>run_kwargs</strong> – parameters passed to the run function – these are specified by <cite>inputs</cite></p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
+<dd class="field-even"><p>A generator that streams in a result and returns the final result</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.render_action">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">render_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.integrations.streamlit.AppState" title="burr.integrations.streamlit.AppState"><span class="pre">AppState</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.render_action" title="Link to this definition">¶</a></dt>
-<dd><p>Renders the current action, including the reads, writes, and the code for the action.
-With Hamilton actions, it will also show the visualization of the action.</p>
-<p>This can be used individually (with a state object) or within the “render_explorer” view.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="burr.integrations.bedrock.BedrockStreamingAction.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><span class="pre">State</span></a></span></span><a class="headerlink" href="#burr.integrations.bedrock.BedrockStreamingAction.update" title="Link to this definition">¶</a></dt>
+<dd><p>Performs a state update given a result and the current state.
+Returns a new, modified <a class="reference internal" href="../../state/#burr.core.state.State" title="burr.core.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a>
+(recall state is immutable – simply changing the state in place will not work).</p>
+<p>In the context of Burr, this is only applied in the two-step actions, where
+the <a class="reference internal" href="../../actions/#burr.core.action.Function.run" title="burr.core.action.Function.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run</span></code></a> and update() functions are separate. The
+function-based APIs for Burr use the SingleStepAction class, which performs them both at once.
+This is not (yet) exposed as an interface for users to extend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>state</strong></p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> – Result of a function executing on the state</p></li>
+<li><p><strong>state</strong> – State to update</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
+<dd class="field-even"><p>A new, modified state.</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.render_state_results">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">render_state_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.integrations.streamlit.AppState" title="burr.integrations.streamlit.AppState"><span class="pre">AppState</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.render_state_results" title="Link to this definition">¶</a></dt>
-<dd><p>Render the state and results for the current state. This includes the state and the result of the action.
-This can be used individually (with a state object) or within the “render_explorer” view.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>state</strong> – State object</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.set_slider_to_current">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">set_slider_to_current</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.set_slider_to_current" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="burr.integrations.streamlit.render_explorer">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.streamlit.</span></span><span class="sig-name descname"><span class="pre">render_explorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#burr.integrations.streamlit.AppState" title="burr.integrations.streamlit.AppState"><span class="pre">AppState</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#burr.integrations.streamlit.render_explorer" title="Link to this definition">¶</a></dt>
-<dd><p>Renders the entire explorer, including the state machine, the action, and the state/results.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>app_state</strong> – State of the app</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
@@ -537,23 +573,23 @@ This can be used individually (with a state object) or within the “render_expl
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../opentelemetry/">
+          <a class="next-page" href="../../../contributing/">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">OpenTelemetry</div>
+                <div class="title">Contributing</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../hamilton/">
+          <a class="prev-page" href="../ray/">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Hamilton</div>
+                <div class="title">Ray</div>
                 
               </div>
             </a>
@@ -600,16 +636,16 @@ This can be used individually (with a state object) or within the “render_expl
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Streamlit</a><ul>
-<li><a class="reference internal" href="#burr.integrations.streamlit.AppState"><code class="docutils literal notranslate"><span class="pre">AppState</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.load_state_from_log_file"><code class="docutils literal notranslate"><span class="pre">load_state_from_log_file()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.get_state"><code class="docutils literal notranslate"><span class="pre">get_state()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.update_state"><code class="docutils literal notranslate"><span class="pre">update_state()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.render_state_machine"><code class="docutils literal notranslate"><span class="pre">render_state_machine()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.render_action"><code class="docutils literal notranslate"><span class="pre">render_action()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.render_state_results"><code class="docutils literal notranslate"><span class="pre">render_state_results()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.set_slider_to_current"><code class="docutils literal notranslate"><span class="pre">set_slider_to_current()</span></code></a></li>
-<li><a class="reference internal" href="#burr.integrations.streamlit.render_explorer"><code class="docutils literal notranslate"><span class="pre">render_explorer()</span></code></a></li>
+<li><a class="reference internal" href="#">Amazon Bedrock</a><ul>
+<li><a class="reference internal" href="#burr.integrations.bedrock.BedrockAction"><code class="docutils literal notranslate"><span class="pre">BedrockAction</span></code></a><ul>
+<li><a class="reference internal" href="#burr.integrations.bedrock.BedrockAction.run_and_update"><code class="docutils literal notranslate"><span class="pre">BedrockAction.run_and_update()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#burr.integrations.bedrock.BedrockStreamingAction"><code class="docutils literal notranslate"><span class="pre">BedrockStreamingAction</span></code></a><ul>
+<li><a class="reference internal" href="#burr.integrations.bedrock.BedrockStreamingAction.stream_run"><code class="docutils literal notranslate"><span class="pre">BedrockStreamingAction.stream_run()</span></code></a></li>
+<li><a class="reference internal" href="#burr.integrations.bedrock.BedrockStreamingAction.update"><code class="docutils literal notranslate"><span class="pre">BedrockStreamingAction.update()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
