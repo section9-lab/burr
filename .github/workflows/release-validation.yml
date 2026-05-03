@@ -72,37 +72,47 @@ jobs:
   build-artifacts:
     name: "Release Validation / build-artifacts"
     needs: check-paths
-    if: needs.check-paths.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
+      - name: Skip — only docs/website changes
+        if: needs.check-paths.outputs.should_run != 'true'
+        run: echo "Skipping — no release-relevant files changed"
+
       - uses: actions/checkout@v4
+        if: needs.check-paths.outputs.should_run == 'true'
 
       - uses: actions/setup-python@v4
+        if: needs.check-paths.outputs.should_run == 'true'
         with:
           python-version: '3.12'
           cache: pip
 
       - uses: actions/setup-node@v4
+        if: needs.check-paths.outputs.should_run == 'true'
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: telemetry/ui/package-lock.json
 
       - uses: actions/setup-java@v4
+        if: needs.check-paths.outputs.should_run == 'true'
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Install system deps
+        if: needs.check-paths.outputs.should_run == 'true'
         run: sudo apt-get install -y --no-install-recommends graphviz
 
       - name: Install Python build deps
+        if: needs.check-paths.outputs.should_run == 'true'
         run: pip install flit twine
 
       - name: Cache Apache RAT
+        if: needs.check-paths.outputs.should_run == 'true'
         id: cache-rat
         uses: actions/cache@v4
         with:
@@ -110,13 +120,14 @@ jobs:
           key: apache-rat-0.16.1
 
       - name: Download Apache RAT if not cached
-        if: steps.cache-rat.outputs.cache-hit != 'true'
+        if: needs.check-paths.outputs.should_run == 'true' && steps.cache-rat.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.cache/apache-rat
           curl -fL -o ~/.cache/apache-rat/apache-rat-0.16.1.jar \
             https://repo1.maven.org/maven2/org/apache/rat/apache-rat/0.16.1/apache-rat-0.16.1.jar
 
       - name: Extract version
+        if: needs.check-paths.outputs.should_run == 'true'
         id: version
         run: |
           VERSION=$(python -c 'import re; print(re.search(r"version\s*=\s*\"([^\"]+)\"", open("pyproject.toml").read()).group(1))')
@@ -124,23 +135,27 @@ jobs:
           echo "BURR_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Build release artifacts (no signing, no upload)
+        if: needs.check-paths.outputs.should_run == 'true'
         run: |
           python scripts/apache_release.py all "$BURR_VERSION" 0 ci-runner \
             --skip-signing --no-upload
 
       - name: Verify all 3 artifacts exist
+        if: needs.check-paths.outputs.should_run == 'true'
         run: |
           test -f "dist/apache-burr-${BURR_VERSION}-incubating-src.tar.gz"
           test -f "dist/apache-burr-${BURR_VERSION}-incubating-sdist.tar.gz"
           test -f "dist/apache_burr-${BURR_VERSION}-py3-none-any.whl"
 
       - name: Run Apache RAT on source and sdist tarballs
+        if: needs.check-paths.outputs.should_run == 'true'
         run: |
           python scripts/verify_apache_artifacts.py licenses \
             --rat-jar ~/.cache/apache-rat/apache-rat-0.16.1.jar \
             --artifacts-dir dist
 
       - name: Upload release artifacts
+        if: needs.check-paths.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
@@ -155,7 +170,6 @@ jobs:
   install-and-smoke:
     name: "Release Validation / install-and-smoke"
     needs: [check-paths, build-artifacts]
-    if: needs.check-paths.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -165,20 +179,28 @@ jobs:
         # (dict | None) which requires Python 3.10+. Tracked separately.
         python-version: ['3.10', '3.11', '3.12']
     steps:
+      - name: Skip — only docs/website changes
+        if: needs.check-paths.outputs.should_run != 'true'
+        run: echo "Skipping — no release-relevant files changed"
+
       - uses: actions/checkout@v4
+        if: needs.check-paths.outputs.should_run == 'true'
 
       - name: Set up Python ${{ matrix.python-version }}
+        if: needs.check-paths.outputs.should_run == 'true'
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Download release artifacts
+        if: needs.check-paths.outputs.should_run == 'true'
         uses: actions/download-artifact@v4
         with:
           name: release-artifacts
           path: dist
 
       - name: Run smoke test
+        if: needs.check-paths.outputs.should_run == 'true'
         env:
           BURR_VERSION: ${{ needs.build-artifacts.outputs.version }}
         run: |
@@ -186,7 +208,7 @@ jobs:
             --wheel "dist/apache_burr-${BURR_VERSION}-py3-none-any.whl"
 
       - name: Upload smoke workspace on failure
-        if: failure()
+        if: failure() && needs.check-paths.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: smoke-workspace-${{ matrix.python-version }}
