@@ -183,6 +183,28 @@ def _stable_app_id_hash(app_id: str, child_key: str) -> str:
     return hashlib.sha256(f"{app_id}:{child_key}".encode()).hexdigest()
 
 
+def _salt_task_app_id(task: "SubGraphTask", sequence_id: Optional[int]) -> "SubGraphTask":
+    """Salts the sub-application ID with the parent's sequence_id so that repeated
+    invocations of the same parallel action within a parent application yield distinct
+    sub-application IDs.
+
+    Without this, sub-app IDs collide across invocations and a cascaded
+    ``state_initializer`` (e.g. from ``initialize_from(...)`` on the parent) will
+    silently hydrate the prior call's persisted state instead of running the action.
+    See https://github.com/apache/burr/issues/761.
+
+    ``sequence_id`` is the parent application's per-step counter, which is incremented
+    on every action execution -- making it the right discriminator for "which
+    invocation of this parallel action are we in".
+    """
+    if sequence_id is None:
+        return task
+    task.application_id = hashlib.sha256(
+        f"{task.application_id}:{sequence_id}".encode()
+    ).hexdigest()
+    return task
+
+
 class TaskBasedParallelAction(SingleStepAction):
     """The base class for actions that run a set of tasks in parallel and reduce the results.
     This is more power-user mode -- if you need fine-grained control over the set of tasks
@@ -269,6 +291,11 @@ class TaskBasedParallelAction(SingleStepAction):
                 delete=[item for item in state.keys() if item.startswith("__")]
             )
             task_generator = self.tasks(state_without_internals, context, run_kwargs)
+            # Salt sub-app IDs with the parent sequence_id so repeated invocations
+            # don't collide and silently replay prior persisted state (#761).
+            task_generator = (
+                _salt_task_app_id(task, context.sequence_id) for task in task_generator
+            )
 
             def execute_task(task):
                 return task.run(run_kwargs["__context"])
@@ -296,6 +323,9 @@ class TaskBasedParallelAction(SingleStepAction):
                 This way we run through all of the task generators. These correspond to the task generation capabilities above (the map*/task generation stuff)
                 """
                 all_tasks = await async_utils.arealize(task_generator)
+                # Salt sub-app IDs with the parent sequence_id so repeated invocations
+                # don't collide and silently replay prior persisted state (#761).
+                all_tasks = [_salt_task_app_id(task, context.sequence_id) for task in all_tasks]
                 coroutines = [item.arun(context) for item in all_tasks]
                 results = await asyncio.gather(*coroutines)
                 # TODO -- yield in order...

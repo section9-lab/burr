@@ -40,12 +40,18 @@ from burr.core.parallelism import (
     MapActionsAndStates,
     MapStates,
     RunnableGraph,
+    SubgraphType,
     SubGraphTask,
     TaskBasedParallelAction,
     _cascade_adapter,
     map_reduce_action,
 )
-from burr.core.persistence import BaseStateLoader, BaseStateSaver, PersistedStateData
+from burr.core.persistence import (
+    BaseStateLoader,
+    BaseStateSaver,
+    InMemoryPersister,
+    PersistedStateData,
+)
 from burr.tracking.base import SyncTrackingClient
 from burr.visibility import ActionSpan
 
@@ -1227,3 +1233,72 @@ def test_map_actions_and_states_uses_same_persister_as_loader():
     assert task.state_initializer is not None
     assert task.tracker is not None
     assert task.state_persister is task.state_initializer  # This ensures they're the same
+
+
+def test_map_states_reexecutes_on_repeated_invocations_with_initializer():
+    """Regression test for https://github.com/apache/burr/issues/761.
+
+    When a parent application is built with ``initialize_from(...)``, the cascaded
+    initializer used to hydrate sub-applications by ID. Sub-app IDs were
+    deterministic in ``(parent_app_id, i, j)`` only, so a second invocation of the
+    same parallel action collided with the first and silently replayed the prior
+    persisted state instead of re-running the action.
+
+    This asserts that repeated invocations now produce fresh outputs.
+    """
+    counter = {"n": 0}
+
+    @action(reads=[], writes=["x"])
+    def pick(state: State) -> State:
+        counter["n"] += 1
+        return state.update(x=counter["n"])
+
+    @action(reads=[], writes=[])
+    def back(state: State) -> State:
+        return state
+
+    class Fan(MapStates):
+        def action(self, state: State, inputs: Dict[str, Any]) -> SubgraphType:
+            return pick
+
+        def states(
+            self, state: State, context: ApplicationContext, inputs: Dict[str, Any]
+        ) -> Generator[State, None, None]:
+            for _ in range(3):
+                yield state
+
+        def reduce(self, state: State, results: Generator[State, None, None]) -> State:
+            return state.update(xs=[s["x"] for s in results])
+
+        @property
+        def reads(self) -> list[str]:
+            return []
+
+        @property
+        def writes(self) -> list[str]:
+            return ["xs"]
+
+    persister = InMemoryPersister()
+    app = (
+        ApplicationBuilder()
+        .with_actions(fan=Fan(), back=back)
+        .with_transitions(("fan", "back"), ("back", "fan"))
+        .with_state_persister(persister)
+        .initialize_from(
+            persister,
+            resume_at_next_action=True,
+            default_state={},
+            default_entrypoint="fan",
+        )
+        .build()
+    )
+    invocations = []
+    for _ in range(3):
+        app.run(halt_after=["fan"])
+        invocations.append(list(app.state["xs"]))
+    # Each invocation should run the action 3 times, producing strictly increasing
+    # counter values across invocations. If the bug regresses the same xs would
+    # appear in every invocation.
+    assert invocations[0] != invocations[1]
+    assert invocations[1] != invocations[2]
+    assert counter["n"] == 9
