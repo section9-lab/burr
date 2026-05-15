@@ -196,6 +196,13 @@ def _salt_task_app_id(task: "SubGraphTask", sequence_id: Optional[int]) -> "SubG
     ``sequence_id`` is the parent application's per-step counter, which is incremented
     on every action execution -- making it the right discriminator for "which
     invocation of this parallel action are we in".
+
+    BREAKING (vs versions without this salting): sub-application IDs for any
+    ``TaskBasedParallelAction`` (``MapStates``, ``MapActions``, ``MapActionsAndStates``)
+    have changed. Sub-app state persisted under the old ID scheme is orphaned --
+    on the first resume after upgrade, the sub-actions re-execute fresh rather
+    than load the old persisted result. This is the *fix* for #761; the old
+    scheme would have silently returned stale data instead.
     """
     if sequence_id is None:
         return task
