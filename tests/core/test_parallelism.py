@@ -1250,9 +1250,7 @@ def test_sub_application_id_override_enables_fresh_execution_with_cascading_init
     @old_action(reads=["input_number"], writes=["output_number", "invocation"])
     def record_invocation(state: State) -> State:
         invocation_count["n"] += 1
-        return state.update(
-            output_number=state["input_number"], invocation=invocation_count["n"]
-        )
+        return state.update(output_number=state["input_number"], invocation=invocation_count["n"])
 
     class SaltedMapStates(MapStates):
         call_index = 0
@@ -1269,9 +1267,7 @@ def test_sub_application_id_override_enables_fresh_execution_with_cascading_init
             return record_invocation
 
         def reduce(self, state: State, states: Generator[State, None, None]) -> State:
-            return state.update(
-                invocations=[output_state["invocation"] for output_state in states]
-            )
+            return state.update(invocations=[output_state["invocation"] for output_state in states])
 
         # Pin sub-app persistence to the shared persister. This mirrors the
         # #761 setup where a cascading initializer makes sub-apps resume.
@@ -1281,9 +1277,7 @@ def test_sub_application_id_override_enables_fresh_execution_with_cascading_init
         def state_persister(self, **kwargs):
             return shared_persister
 
-        def sub_application_id(
-            self, key: str, state: State, context: ApplicationContext
-        ) -> str:
+        def sub_application_id(self, key: str, state: State, context: ApplicationContext) -> str:
             # Per-invocation salt -- each top-level run gets fresh sub-app ids.
             return f"{context.app_id}:{key}:call-{type(self).call_index}"
 
@@ -1308,9 +1302,7 @@ def test_sub_application_id_override_enables_fresh_execution_with_cascading_init
             .with_identifiers(app_id="parent-app-761")
             .build()
         )
-        _, _, state = app.run(
-            halt_after=["final"], inputs={"input_numbers_in_state": [1, 2, 3]}
-        )
+        _, _, state = app.run(halt_after=["final"], inputs={"input_numbers_in_state": [1, 2, 3]})
         return state
 
     # Three independent parent invocations against the same parent app_id and
