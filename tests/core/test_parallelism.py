@@ -45,7 +45,12 @@ from burr.core.parallelism import (
     _cascade_adapter,
     map_reduce_action,
 )
-from burr.core.persistence import BaseStateLoader, BaseStateSaver, PersistedStateData
+from burr.core.persistence import (
+    BaseStateLoader,
+    BaseStateSaver,
+    InMemoryPersister,
+    PersistedStateData,
+)
 from burr.tracking.base import SyncTrackingClient
 from burr.visibility import ActionSpan
 
@@ -1227,3 +1232,98 @@ def test_map_actions_and_states_uses_same_persister_as_loader():
     assert task.state_initializer is not None
     assert task.tracker is not None
     assert task.state_persister is task.state_initializer  # This ensures they're the same
+
+
+def test_sub_application_id_override_enables_fresh_execution_with_cascading_initializer():
+    """Regression test for #761.
+
+    With a cascading state initializer + the default deterministic sub-app id,
+    re-invoking the parallel action on the same parent reuses prior sub-app
+    state via the initializer, so per-invocation work does not actually re-run.
+    Overriding ``sub_application_id`` to salt with a per-invocation value
+    restores fresh execution while leaving the default (resume-on-rebuild)
+    behavior alone for everyone else.
+    """
+    invocation_count = {"n": 0}
+    shared_persister = InMemoryPersister()
+
+    @old_action(reads=["input_number"], writes=["output_number", "invocation"])
+    def record_invocation(state: State) -> State:
+        invocation_count["n"] += 1
+        return state.update(
+            output_number=state["input_number"], invocation=invocation_count["n"]
+        )
+
+    class SaltedMapStates(MapStates):
+        call_index = 0
+
+        def states(
+            self, state: State, context: ApplicationContext, inputs: Dict[str, Any]
+        ) -> Generator[State, None, None]:
+            for input_number in state["input_numbers_in_state"]:
+                yield state.update(input_number=input_number)
+
+        def action(
+            self, state: State, inputs: Dict[str, Any]
+        ) -> Union[Action, Callable, RunnableGraph]:
+            return record_invocation
+
+        def reduce(self, state: State, states: Generator[State, None, None]) -> State:
+            return state.update(
+                invocations=[output_state["invocation"] for output_state in states]
+            )
+
+        # Pin sub-app persistence to the shared persister. This mirrors the
+        # #761 setup where a cascading initializer makes sub-apps resume.
+        def state_initializer(self, **kwargs):
+            return shared_persister
+
+        def state_persister(self, **kwargs):
+            return shared_persister
+
+        def sub_application_id(
+            self, key: str, state: State, context: ApplicationContext
+        ) -> str:
+            # Per-invocation salt -- each top-level run gets fresh sub-app ids.
+            return f"{context.app_id}:{key}:call-{type(self).call_index}"
+
+        @property
+        def writes(self) -> list[str]:
+            return ["invocations"]
+
+        @property
+        def reads(self) -> list[str]:
+            return ["input_numbers_in_state"]
+
+    def _build_and_run():
+        app = (
+            ApplicationBuilder()
+            .with_actions(
+                initial=Input("input_numbers_in_state"),
+                map_action=SaltedMapStates(),
+                final=Result("invocations"),
+            )
+            .with_transitions(("initial", "map_action"), ("map_action", "final"))
+            .with_entrypoint("initial")
+            .with_identifiers(app_id="parent-app-761")
+            .build()
+        )
+        _, _, state = app.run(
+            halt_after=["final"], inputs={"input_numbers_in_state": [1, 2, 3]}
+        )
+        return state
+
+    # Three independent parent invocations against the same parent app_id and
+    # the same sub-app persister. With the override, every sub-task should
+    # actually execute on every run (no stale-replay caching).
+    SaltedMapStates.call_index = 0
+    _build_and_run()
+    SaltedMapStates.call_index = 1
+    _build_and_run()
+    SaltedMapStates.call_index = 2
+    final_state = _build_and_run()
+
+    # 3 inputs * 3 invocations = 9 actual executions.
+    assert invocation_count["n"] == 9
+    # The latest run's invocations all come from the most recent counter range.
+    assert all(inv > 6 for inv in final_state["invocations"])

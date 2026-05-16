@@ -316,6 +316,35 @@ class TaskBasedParallelAction(SingleStepAction):
         """
         return False
 
+    def sub_application_id(self, key: str, state: State, context: ApplicationContext) -> str:
+        """Compute the application_id for a sub-task.
+
+        Default: deterministic hash of (parent_app_id, key) -- stable across parent
+        rebuilds, which is what enables sub-app checkpoint resume on crash recovery.
+        If the parent application is rebuilt (e.g. as part of retry-on-failure or
+        a resume-from-persistence flow), each sub-task gets the same id it had
+        before, so a cascading state initializer can find its prior checkpoint
+        and pick up where it left off.
+
+        Override to customize cache/resume behavior:
+
+          - Fresh execution per invocation: salt with something that advances
+            per-call (e.g. ``context.sequence_id``, a uuid, your own counter).
+            This is the workaround for `#761 <https://github.com/apache/burr/issues/761>`_,
+            where a cascading state initializer combined with deterministic sub-app
+            ids causes a parallel action to replay stale sub-app state on every
+            invocation instead of running fresh. Note that opting into per-invocation
+            ids gives up the resume-on-rebuild guarantee above.
+          - Pin to a business key: derive from ``state`` contents (e.g. a record
+            id) so re-runs against the same logical input reuse the same sub-app.
+
+        :param key: Per-task key (unique within this invocation of the parent action).
+        :param state: State that will be passed to the sub-task.
+        :param context: Parent application context.
+        :return: Application id to use for the sub-task.
+        """
+        return _stable_app_id_hash(context.app_id, key)
+
     @property
     def inputs(self) -> Union[list[str], tuple[list[str], list[str]]]:
         """Inputs from this -- if you want to override you'll want to call super()
@@ -509,7 +538,7 @@ class MapActionsAndStates(TaskBasedParallelAction):
                 graph=RunnableGraph.create(action),
                 inputs=inputs,
                 state=substate,
-                application_id=_stable_app_id_hash(context.app_id, key),
+                application_id=self.sub_application_id(key, substate, context),
                 tracker=tracker,
                 state_persister=state_persister,
                 state_initializer=state_initializer,
@@ -518,7 +547,10 @@ class MapActionsAndStates(TaskBasedParallelAction):
         def _tasks() -> Generator[SubGraphTask, None, None]:
             for i, action in enumerate(self.actions(state, context, inputs)):
                 for j, substate in enumerate(self.states(state, context, inputs)):
-                    key = f"{i}-{j}"  # this is a stable hash for now but will not handle caching
+                    # Per-task key is stable across rebuilds. The actual sub-app id is
+                    # computed via ``sub_application_id``; override that hook to opt
+                    # into per-invocation ids (see issue #761).
+                    key = f"{i}-{j}"
                     yield _create_task(key, action, substate)
 
         async def _atasks() -> AsyncGenerator[SubGraphTask, None]:
