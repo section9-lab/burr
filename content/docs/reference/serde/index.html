@@ -599,17 +599,51 @@ Requires a <cite>path</cite> key in the <cite>pandas_kwargs</cite> dictionary.</
 </section>
 <section id="module-burr.integrations.serde.pydantic">
 <span id="pydantic-objects"></span><h3>Pydantic Objects<a class="headerlink" href="#module-burr.integrations.serde.pydantic" title="Link to this heading">¶</a></h3>
+<dl class="py exception">
+<dt class="sig sig-object py" id="burr.integrations.serde.pydantic.SecurityWarning">
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">burr.integrations.serde.pydantic.</span></span><span class="sig-name descname"><span class="pre">SecurityWarning</span></span><a class="headerlink" href="#burr.integrations.serde.pydantic.SecurityWarning" title="Link to this definition">¶</a></dt>
+<dd><p>Warning issued when pydantic deserialization proceeds without an allowlist.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="burr.integrations.serde.pydantic.deserialize_pydantic">
-<span class="sig-prename descclassname"><span class="pre">burr.integrations.serde.pydantic.</span></span><span class="sig-name descname"><span class="pre">deserialize_pydantic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">BaseModel</span></span></span><a class="headerlink" href="#burr.integrations.serde.pydantic.deserialize_pydantic" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">burr.integrations.serde.pydantic.</span></span><span class="sig-name descname"><span class="pre">deserialize_pydantic</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">allowlist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">BaseModel</span></span></span><a class="headerlink" href="#burr.integrations.serde.pydantic.deserialize_pydantic" title="Link to this definition">¶</a></dt>
 <dd><p>Deserializes a pydantic object from a dictionary.
 This will pop the __pydantic_class and then import the class.</p>
+<p>Security note: the module name is taken from the serialized payload.
+To mitigate arbitrary code execution from a compromised persistence
+backend, pass an <code class="docutils literal notranslate"><span class="pre">allowlist</span></code> of permitted modules, or call
+<code class="docutils literal notranslate"><span class="pre">set_allowlist([...])</span></code> globally.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="burr.integrations.serde.pydantic.serialize_pydantic">
 <span class="sig-prename descclassname"><span class="pre">burr.integrations.serde.pydantic.</span></span><span class="sig-name descname"><span class="pre">serialize_pydantic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BaseModel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#burr.integrations.serde.pydantic.serialize_pydantic" title="Link to this definition">¶</a></dt>
 <dd><p>Uses pydantic to dump the model to a dictionary and then adds the __pydantic_class to the dictionary.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="burr.integrations.serde.pydantic.set_allowlist">
+<span class="sig-prename descclassname"><span class="pre">burr.integrations.serde.pydantic.</span></span><span class="sig-name descname"><span class="pre">set_allowlist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">allowlist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#burr.integrations.serde.pydantic.set_allowlist" title="Link to this definition">¶</a></dt>
+<dd><p>Set a global allowlist of permitted modules for pydantic deserialization.</p>
+<p>Each entry should be a fully-qualified module name (e.g. <code class="docutils literal notranslate"><span class="pre">myapp.models</span></code>).
+Submodules are matched by prefix, so <code class="docutils literal notranslate"><span class="pre">myapp</span></code> allows <code class="docutils literal notranslate"><span class="pre">myapp</span></code>, <code class="docutils literal notranslate"><span class="pre">myapp.foo</span></code>,
+<code class="docutils literal notranslate"><span class="pre">myapp.foo.bar</span></code>, etc.</p>
+<p>When an allowlist is set, <code class="docutils literal notranslate"><span class="pre">deserialize_pydantic</span></code> will reject any
+<code class="docutils literal notranslate"><span class="pre">__pydantic_class</span></code> whose module is not allowed, raising a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>allowlist</strong> – List of permitted module name prefixes, or <code class="docutils literal notranslate"><span class="pre">None</span></code> to clear.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -709,8 +743,10 @@ This will pop the __pydantic_class and then import the class.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-burr.integrations.serde.pydantic">Pydantic Objects</a><ul>
+<li><a class="reference internal" href="#burr.integrations.serde.pydantic.SecurityWarning"><code class="docutils literal notranslate"><span class="pre">SecurityWarning</span></code></a></li>
 <li><a class="reference internal" href="#burr.integrations.serde.pydantic.deserialize_pydantic"><code class="docutils literal notranslate"><span class="pre">deserialize_pydantic()</span></code></a></li>
 <li><a class="reference internal" href="#burr.integrations.serde.pydantic.serialize_pydantic"><code class="docutils literal notranslate"><span class="pre">serialize_pydantic()</span></code></a></li>
+<li><a class="reference internal" href="#burr.integrations.serde.pydantic.set_allowlist"><code class="docutils literal notranslate"><span class="pre">set_allowlist()</span></code></a></li>
 </ul>
 </li>
 </ul>
