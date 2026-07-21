@@ -1,34 +1,47 @@
+<!--
+     Licensed to the Apache Software Foundation (ASF) under one
+     or more contributor license agreements.  See the NOTICE file
+     distributed with this work for additional information
+     regarding copyright ownership.  The ASF licenses this file
+     to you under the Apache License, Version 2.0 (the
+     "License"); you may not use this file except in compliance
+     with the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an
+     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+     specific language governing permissions and limitations
+     under the License.
+-->
+
 <!doctype html>
 <html class="no-js" lang="en" data-content_root="../../../">
-  <head><meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../../../genindex/"><link rel="search" title="Search" href="../../../search/"><link rel="next" title="🚧 Guardrails / Tests" href="../../guardrails/"><link rel="prev" title="Monitoring in Production" href="../monitoring/">
+        <link rel="canonical" href="https://burr.apache.org/docs/examples/deployment/aws/">
+        <link rel="prefetch" href="../../../_static/burr_logo.svg" as="image">
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-20Z3J1CR22"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-20Z3J1CR22');
-    </script>
-    <link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="🚧 Guardrails" href="../../guardrails/" /><link rel="prev" title="Web service (FastAPI, Flask, Django, etc.)" href="../web-server/" />
-        <link rel="canonical" href="https://burr.dagworks.io/examples/deployment/aws/" />
-
-    <!-- Generated with Sphinx 8.1.2 and Furo 2024.08.06 -->
-        <title>AWS Lambda - Burr</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=354aac6f" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=302659d7" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"><!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>AWS Deployment Example - Apache Burr</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=238f852d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/testimonials.css?v=cc24216e" />
     
     
 
 
 <style>
   body {
-    --color-code-background: #f8f8f8;
-  --color-code-foreground: black;
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
   --color-announcement-background: #ffba00;
   --color-announcement-text: #091E42;
   
@@ -51,7 +64,34 @@
       }
     }
   }
-</style></head>
+</style>
+
+<!-- Matomo -->
+<script>
+  var _paq = window._paq = window._paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(["setDoNotTrack", true]);
+  _paq.push(["disableCookies"]);
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="https://analytics.apache.org/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '86']);
+    var d=document, g=d.createElement('script'),
+s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<!-- End Matomo Code -->
+<!-- Point sidebar brand link to landing page -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var brand = document.querySelector(".sidebar-brand");
+    if (brand) brand.href = "/";
+  });
+</script>
+</head>
   <body>
     
     <script>
@@ -161,14 +201,10 @@
   </symbol>
 </svg>
 
-<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
-<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
-<label class="overlay sidebar-overlay" for="__navigation">
-  <div class="visually-hidden">Hide navigation sidebar</div>
-</label>
-<label class="overlay toc-overlay" for="__toc">
-  <div class="visually-hidden">Hide table of contents sidebar</div>
-</label>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
 
 <a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
 
@@ -178,17 +214,15 @@
   <header class="mobile-header">
     <div class="header-left">
       <label class="nav-overlay-icon" for="__navigation">
-        <div class="visually-hidden">Toggle site navigation sidebar</div>
-        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../"><div class="brand">Burr</div></a>
+      <a href="../../../"><div class="brand">Apache Burr</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
-        <button class="theme-toggle">
-          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
           <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
           <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
@@ -196,8 +230,7 @@
         </button>
       </div>
       <label class="toc-overlay-icon toc-header-icon" for="__toc">
-        <div class="visually-hidden">Toggle table of contents sidebar</div>
-        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
   </header>
@@ -205,9 +238,11 @@
     <div class="sidebar-container">
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/burr_logo.svg" alt="Logo"/>
+  </div>
   
-  
-  <span class="sidebar-brand-text">Burr</span>
+  <span class="sidebar-brand-text">Apache Burr</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search/" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -215,67 +250,79 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Burr</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Apache Burr</span></p>
 <ul class="current">
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../getting_started/">Get started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Get started</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../getting_started/">Get started</a><input aria-label="Toggle navigation of Get started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../getting_started/why-burr/">Why Burr?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../getting_started/install/">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../getting_started/simple-example/">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../getting_started/up-next/">Next Steps</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../../">Cookbook</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Cookbook</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../simple/">🧸 Toy examples</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of 🧸 Toy examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../ui/">Burr UI</a><input aria-label="Toggle navigation of Burr UI" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../ui/getting-started/">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ui/notebook/">Notebook / Colab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ui/deployment/">Deployment</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../../">Cookbook</a><input aria-label="Toggle navigation of Cookbook" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../simple/">🧸 Toy examples</a><input aria-label="Toggle navigation of 🧸 Toy examples" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../simple/counter/">Counter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../simple/cowsay/">Cowsay</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../simple/choose-your-own-adventure/">Choose your own adventure</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../chatbots/">📞 Chatbots</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of 📞 Chatbots</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../chatbots/">📞 Chatbots</a><input aria-label="Toggle navigation of 📞 Chatbots" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../chatbots/basic-chatbot/">Basic</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../chatbots/gpt-like-chatbot/">GPT-like multimodal chatbot</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../chatbots/rag-chatbot-hamilton/">Conversational RAG with Burr and Hamilton</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../agents/">🤖 Agents</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of 🤖 Agents</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../agents/">🤖 Agents</a><input aria-label="Toggle navigation of 🤖 Agents" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../agents/divide-and-conquer/">Divide and Conquer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../agents/agent-patterns/">Agent patterns</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current has-children"><a class="reference internal" href="../">✈ Deployment</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of ✈ Deployment</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../web-server/">Web service (FastAPI, Flask, Django, etc.)</a></li>
-<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">AWS Lambda</a></li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="../">Deployment</a><input aria-label="Toggle navigation of Deployment" checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../web-server/">Burr in a web server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../infrastructure/">Provisioning Infrastructure/Deploying</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../monitoring/">Monitoring in Production</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">AWS Deployment Example</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../guardrails/">🚧 Guardrails</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of 🚧 Guardrails</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../guardrails/">🚧 Guardrails / Tests</a><input aria-label="Toggle navigation of 🚧 Guardrails / Tests" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../guardrails/creating_tests/">Creating Test Cases</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../data-science/">🧪 Data science</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of 🧪 Data science</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../data-science/">🧪 Data science</a><input aria-label="Toggle navigation of 🧪 Data science" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../data-science/ml_training/">Hyperparameter tuning</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../data-science/simulation/">Simulations</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../concepts/">Concepts</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Concepts</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../concepts/">Concepts</a><input aria-label="Toggle navigation of Concepts" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/overview/">Cheat Sheet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concepts/sdlc/">SDLC with LLMs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/actions/">Actions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/state/">State</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/state-machine/">Applications</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/transitions/">Transitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/tracking/">Tracking Burr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concepts/s3-tracking-aws/">S3 Tracking on AWS (Concepts)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/state-persistence/">State Persistence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/serde/">Serialization / Deserialization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/streaming-actions/">Streaming Actions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/state-typing/">Typing State</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/hooks/">Hooks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/additional-visibility/">Additional Visibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concepts/parallelism/">Parallelism</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/recursion/">Recursive Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concepts/sync-vs-async/">Sync vs Async Applications</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../concepts/planned-capabilities/">Planned Capabilities</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/">API reference</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of API reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/application/">Applications</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/application/#graph-apis">Graph APIs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/actions/">Actions</a></li>
@@ -286,36 +333,51 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/tracking/">Tracking</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/visibility/">Tracing Inside Actions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/lifecycle/">Lifecycle API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/parallelism/">Parallelism</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../reference/typing/">Typing</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/integrations/">Integrations</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of Integrations</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/integrations/">Integrations</a><input aria-label="Toggle navigation of Integrations" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/hamilton/">Hamilton</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/streamlit/">Streamlit</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/opentelemetry/">OpenTelemetry</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/traceloop/">Traceloop</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/langchain/">Langchain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/pydantic/">Pydantic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/haystack/">Haystack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/ray/">Ray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/integrations/bedrock/">Amazon Bedrock</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../reference/telemetry/">Usage analytics + data privacy</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../contributing/">Contributing</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of Contributing</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../contributing/">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../contributing/setup/">Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../contributing/iterating/">Developing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../contributing/architecture/">Architecture</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../contributing/contributing/">Contributing</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ecosystem/">Ecosystem</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Burr Cloud</span></p>
+<p class="caption" role="heading"><span class="caption-text">ASF</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference external" href="https://forms.gle/w9u2QKcPrztApRedA">Waitist</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../asf/">ASF</a><input aria-label="Toggle navigation of ASF" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/">Apache Software Foundation</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/licenses/">License</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/events/current-event.html">Events</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/security/">Security</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/foundation/sponsorship.html">Sponsorship</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/foundation/thanks.html">Thanks</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.apache.org/foundation/policies/conduct.html">Code of Conduct</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">RESOURCES</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://blog.dagworks.io/">Blog</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://discord.gg/6Zy2DwP4f3">Discord community server</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/dagworks-inc/burr">GitHub</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://twitter.com/dagworks">Twitter</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apache/burr">GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://twitter.com/burr_framework">Twitter</a></li>
 </ul>
 
 </div>
@@ -335,19 +397,8 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          <div class="view-this-page">
-  <a class="muted-link" href="https://github.com/dagworks-inc/burr/blob/main/docs/examples/deployment/aws.md?plain=true" title="View this page">
-    <svg><use href="#svg-eye"></use></svg>
-    <span class="visually-hidden">View this page</span>
-  </a>
-</div><div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/dagworks-inc/burr/edit/main/docs/examples/deployment/aws.md" title="Edit this page">
-    <svg><use href="#svg-pencil"></use></svg>
-    <span class="visually-hidden">Edit this page</span>
-  </a>
-</div><div class="theme-toggle-container theme-toggle-content">
-            <button class="theme-toggle">
-              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
               <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
               <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
@@ -355,105 +406,83 @@
             </button>
           </div>
           <label class="toc-overlay-icon toc-content-icon" for="__toc">
-            <div class="visually-hidden">Toggle table of contents sidebar</div>
-            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="aws-lambda">
-<h1>AWS Lambda<a class="headerlink" href="#aws-lambda" title="Link to this heading">¶</a></h1>
-<p><a class="reference external" href="https://aws.amazon.com/lambda/">AWS Lambda</a> - serverless computation service in AWS.</p>
-<p>Here we have an example how to deploy “hello-world” AWS Lambda with a simple Burr application.
-This example is based on the official instruction: https://docs.aws.amazon.com/lambda/latest/dg/python-image.html#python-image-instructions</p>
-<p>Burr can be deployed within a Lambda function. This is a good option if you want to run your
-application in response to events, or if you want to run your application in a serverless environment.</p>
-<p>See the <a class="reference external" href="https://github.com/DAGWorks-Inc/burr/tree/main/examples/deployment/aws/lambda">repository on GitHub</a> for the full code example and for step-by-step instructions on how to deploy a Burr application to AWS Lambda.</p>
-<section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h2>
+          <section id="aws-deployment-example">
+<span id="id1"></span><h1>AWS Deployment Example<a class="headerlink" href="#aws-deployment-example" title="Link to this heading">¶</a></h1>
+<p>This example covers deploying Burr tracking infrastructure on AWS with S3, and
+optionally SQS for event-driven updates.</p>
+<p>The Terraform module lives in:</p>
 <ul class="simple">
-<li><p><strong>AWS CLI Setup</strong>: Make sure the AWS CLI is set up on your machine. If you haven’t done this yet, no worries! You can follow the <a class="reference external" href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html">Quick Start guide</a> for easy setup instructions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/deployment/aws/terraform</span></code></p></li>
+</ul>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h2>
+<p>S3-only (polling mode):</p>
+<ul class="simple">
+<li><p>Burr applications write tracking data to S3.</p></li>
+<li><p>Tracking server polls/indexes S3 and serves the UI.</p></li>
+</ul>
+<p>S3+SQS (event-driven mode):</p>
+<ul class="simple">
+<li><p>S3 object notifications are delivered to SQS.</p></li>
+<li><p>Tracking server consumes SQS and ingests updates with lower latency.</p></li>
 </ul>
 </section>
-<section id="step-by-step-guide">
-<h2>Step-by-Step Guide<a class="headerlink" href="#step-by-step-guide" title="Link to this heading">¶</a></h2>
-<section id="build-docker-image">
-<h3>1. Build Docker image:<a class="headerlink" href="#build-docker-image" title="Link to this heading">¶</a></h3>
-<ul>
-<li><p><strong>Build Docker image for deploy in AWS ECR</strong></p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span>-t<span class="w"> </span>aws-lambda-burr<span class="w"> </span>.
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>examples/deployment/aws/terraform
+terraform<span class="w"> </span>init
+terraform<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span>dev.tfvars<span class="w">   </span><span class="c1"># S3 polling mode</span>
+<span class="c1"># or</span>
+terraform<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span>prod.tfvars<span class="w">  </span><span class="c1"># S3 + SQS event-driven mode</span>
 </pre></div>
 </div>
-</li>
-<li><p><strong>Local tests:</strong></p>
-<p>Run Docker container:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span><span class="m">9000</span>:8080<span class="w"> </span>aws-lambda-burr
+<p>After apply, inspect outputs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>terraform<span class="w"> </span>output<span class="w"> </span>burr_environment_variables
 </pre></div>
 </div>
-<p>Send test request to check if Docker container executes it correctly:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-XPOST<span class="w"> </span><span class="s2">&quot;http://localhost:9000/2015-03-31/functions/function/invocations&quot;</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;body&quot;: {&quot;number&quot;:3}}&#39;</span>
-</pre></div>
-</div>
-</li>
+<p>Set these environment variables in the runtime where you launch <code class="docutils literal notranslate"><span class="pre">burr</span></code>.</p>
+</section>
+<section id="terraform-variables-and-modes">
+<h2>Terraform Variables and Modes<a class="headerlink" href="#terraform-variables-and-modes" title="Link to this heading">¶</a></h2>
+<p>Key variables:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">aws_region</span></code> (default <code class="docutils literal notranslate"><span class="pre">us-east-1</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">environment</span></code> (for example <code class="docutils literal notranslate"><span class="pre">dev</span></code> / <code class="docutils literal notranslate"><span class="pre">prod</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">s3_bucket_name</span></code> (optional custom name)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_sqs</span></code> (<code class="docutils literal notranslate"><span class="pre">true</span></code> for event-driven mode)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sqs_queue_name</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">log_retention_days</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">snapshot_retention_days</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dlq_alarm_notification_emails</span></code></p></li>
+</ul>
+<p>Mode mapping:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dev.tfvars</span></code>: S3-only (polling)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prod.tfvars</span></code>: S3 + SQS (event-driven)</p></li>
 </ul>
 </section>
-<section id="create-aws-ecr-repository">
-<h3>2. Create AWS ECR repository:<a class="headerlink" href="#create-aws-ecr-repository" title="Link to this heading">¶</a></h3>
-<p>Ensure the AWS account number (<code class="docutils literal notranslate"><span class="pre">111122223333</span></code>) is correctly replaced with yours:</p>
-<ul>
-<li><p><strong>Authenticate Docker to Amazon ECR</strong>:</p>
-<p>Retrieve an authentication token to authenticate your Docker client to your Amazon Elastic Container Registry (ECR):</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>ecr<span class="w"> </span>get-login-password<span class="w"> </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span>AWS<span class="w"> </span>--password-stdin<span class="w"> </span><span class="m">111122223333</span>.dkr.ecr.us-east-1.amazonaws.com
-</pre></div>
-</div>
-</li>
-<li><p><strong>Create the ECR Repository</strong>:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>ecr<span class="w"> </span>create-repository<span class="w"> </span>--repository-name<span class="w"> </span>aws-lambda-burr<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--image-scanning-configuration<span class="w"> </span><span class="nv">scanOnPush</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--image-tag-mutability<span class="w"> </span>MUTABLE
-</pre></div>
-</div>
-</li>
+<section id="terraform-outputs">
+<h2>Terraform Outputs<a class="headerlink" href="#terraform-outputs" title="Link to this heading">¶</a></h2>
+<p>Useful outputs include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">s3_bucket_name</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sqs_queue_url</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sqs_dlq_url</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dlq_alarm_arn</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dlq_alarm_sns_topic_arn</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">burr_environment_variables</span></code></p></li>
 </ul>
 </section>
-<section id="deploy-the-image-to-aws-ecr">
-<h3>3. Deploy the Image to AWS ECR<a class="headerlink" href="#deploy-the-image-to-aws-ecr" title="Link to this heading">¶</a></h3>
-<p>Ensure the AWS account number (<code class="docutils literal notranslate"><span class="pre">111122223333</span></code>) is correctly replaced with yours:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>tag<span class="w"> </span>aws-lambda-burr<span class="w"> </span><span class="m">111122223333</span>.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-burr:latest
-docker<span class="w"> </span>push<span class="w"> </span><span class="m">111122223333</span>.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-burr:latest
-</pre></div>
-</div>
-</section>
-<section id="create-a-simple-aws-lambda-role">
-<h3>4. Create a simple AWS Lambda role:<a class="headerlink" href="#create-a-simple-aws-lambda-role" title="Link to this heading">¶</a></h3>
-<p>Example of creating an AWS Role for Lambda execution:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>iam<span class="w"> </span>create-role<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--role-name<span class="w"> </span>lambda-ex<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--assume-role-policy-document<span class="w"> </span><span class="s1">&#39;{&quot;Version&quot;: &quot;2012-10-17&quot;,&quot;Statement&quot;: [{ &quot;Effect&quot;: &quot;Allow&quot;, &quot;Principal&quot;: {&quot;Service&quot;: &quot;lambda.amazonaws.com&quot;}, &quot;Action&quot;: &quot;sts:AssumeRole&quot;}]}&#39;</span>
-</pre></div>
-</div>
-</section>
-<section id="create-aws-lambda">
-<h3>5. Create AWS Lambda<a class="headerlink" href="#create-aws-lambda" title="Link to this heading">¶</a></h3>
-<p>Ensure the AWS account number (<code class="docutils literal notranslate"><span class="pre">111122223333</span></code>) is correctly replaced with yours:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>lambda<span class="w"> </span>create-function<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--function-name<span class="w"> </span>aws-lambda-burr<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--package-type<span class="w"> </span>Image<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--code<span class="w"> </span><span class="nv">ImageUri</span><span class="o">=</span><span class="m">111122223333</span>.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-burr:latest<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--role<span class="w"> </span>arn:aws:iam::111122223333:role/lambda-ex
-</pre></div>
-</div>
-</section>
-<section id="test-aws-lambda">
-<h3>6. Test AWS Lambda<a class="headerlink" href="#test-aws-lambda" title="Link to this heading">¶</a></h3>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>lambda<span class="w"> </span>invoke<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--function-name<span class="w"> </span>aws-lambda-burr<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--cli-binary-format<span class="w"> </span>raw-in-base64-out<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--payload<span class="w"> </span><span class="s1">&#39;{&quot;body&quot;: {&quot;number&quot;: 5}}&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>response.json
-</pre></div>
-</div>
-</section>
+<section id="related-guides">
+<h2>Related Guides<a class="headerlink" href="#related-guides" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../concepts/s3-tracking-aws/#s3-tracking-aws"><span class="std std-ref">S3 tracking concepts</span></a></p></li>
+<li><p><a class="reference internal" href="../../../reference/integrations/bedrock/#bedrock-integration"><span class="std std-ref">Amazon Bedrock integration</span></a></p></li>
+</ul>
 </section>
 </section>
 
@@ -467,18 +496,18 @@ docker<span class="w"> </span>push<span class="w"> </span><span class="m">111122
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">🚧 Guardrails</div>
+                <div class="title">🚧 Guardrails / Tests</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../web-server/">
+          <a class="prev-page" href="../monitoring/">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Web service (FastAPI, Flask, Django, etc.)</div>
+                <div class="title">Monitoring in Production</div>
                 
               </div>
             </a>
@@ -486,7 +515,7 @@ docker<span class="w"> </span>push<span class="w"> </span><span class="m">111122
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2024, Elijah ben Izzy, Stefan Krawczyk
+                Copyright &#169; The Apache Software Foundation, Licensed under the Apache License, Version 2.0.
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
             
@@ -494,7 +523,20 @@ docker<span class="w"> </span>push<span class="w"> </span><span class="m">111122
             
           </div>
           <div class="right-details">
-            
+            <div class="icons">
+              <a class="muted-link " href="https://incubator.apache.org/" aria-label="Apache Stuff">
+<div class="apache-footer">
+    <img width="200" src="/_static/apache-incubator-logo.svg" alt="Apache Incubator Logo" class="apache-incubator-logo">
+    <div class="apache-notice">
+        <p>Apache Burr is an effort undergoing incubation at The Apache Software Foundation (ASF), sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.</p>
+    </div>
+    <div class="apache-copyright">
+        <p>Apache, the names of Apache projects, and the feather logo are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.</p>
+    </div>
+</div>
+</a>
+              
+            </div>
           </div>
         </div>
         
@@ -512,17 +554,12 @@ docker<span class="w"> </span>push<span class="w"> </span><span class="m">111122
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">AWS Lambda</a><ul>
-<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
-<li><a class="reference internal" href="#step-by-step-guide">Step-by-Step Guide</a><ul>
-<li><a class="reference internal" href="#build-docker-image">1. Build Docker image:</a></li>
-<li><a class="reference internal" href="#create-aws-ecr-repository">2. Create AWS ECR repository:</a></li>
-<li><a class="reference internal" href="#deploy-the-image-to-aws-ecr">3. Deploy the Image to AWS ECR</a></li>
-<li><a class="reference internal" href="#create-a-simple-aws-lambda-role">4. Create a simple AWS Lambda role:</a></li>
-<li><a class="reference internal" href="#create-aws-lambda">5. Create AWS Lambda</a></li>
-<li><a class="reference internal" href="#test-aws-lambda">6. Test AWS Lambda</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">AWS Deployment Example</a><ul>
+<li><a class="reference internal" href="#architecture">Architecture</a></li>
+<li><a class="reference internal" href="#quick-start">Quick Start</a></li>
+<li><a class="reference internal" href="#terraform-variables-and-modes">Terraform Variables and Modes</a></li>
+<li><a class="reference internal" href="#terraform-outputs">Terraform Outputs</a></li>
+<li><a class="reference internal" href="#related-guides">Related Guides</a></li>
 </ul>
 </li>
 </ul>
@@ -537,6 +574,6 @@ docker<span class="w"> </span>push<span class="w"> </span><span class="m">111122
 </div><script src="../../../_static/documentation_options.js?v=187304be"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../../../_static/scripts/furo.js?v=5fa4622c"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
     </body>
 </html>
